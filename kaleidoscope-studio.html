@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaleidoscope Studio</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'spin-slow': 'spin 12s linear infinite',
+            'fadeIn': 'fadeIn 0.25s ease-out forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'scale(0.95)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar styling for neutral aesthetic */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-x-hidden">
+
+  <!-- HEADER SECTION -->
+  <header class="border-b border-neutral-800 bg-neutral-900/60 backdrop-blur-md sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+    <a href="https://www.instagram.com/calvin_chak_art" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+      <div class="relative">
+        <div class="p-2.5 bg-gradient-to-br from-cyan-400 via-purple-600 to-pink-500 rounded-xl shadow-lg animate-spin-slow">
+          <!-- Sparkles Icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/></svg>
+        </div>
+        <div id="header-ripple" class="absolute inset-0 rounded-xl bg-purple-500 animate-ping opacity-0 transition-opacity duration-500"></div>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          Kaleidoscope Studio
+        </h1>
+        <p class="text-xs text-neutral-400 flex items-center space-x-1">
+          <span class="text-purple-400 font-medium">Made by Calvin Chak (IG @calvin_chak_art)</span>
+        </p>
+      </div>
+    </a>
+
+    <!-- TOP SYSTEM ACTIONS -->
+    <div class="flex items-center space-x-2">
+      <!-- Audio Synth Toggle (Hidden on mobile by default) -->
+      <button id="toggle-synth" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all bg-neutral-800 hover:bg-neutral-700 text-neutral-300">
+        <span id="synth-icon">
+          <!-- Volume Off -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>
+        </span>
+        <span class="hidden sm:inline" id="synth-text">Relaxing Sounds</span>
+      </button>
+
+      <!-- Info Manual Toggle -->
+      <button id="btn-info" class="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors">
+        <!-- Info Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CORE INTERACTION CONTAINER (Clean stacked layout for mobile + desktop) -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-4 lg:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+    
+    <!-- CENTER INTERACTION CANVAS SCREEN (At the top) -->
+    <section class="xl:col-span-6 flex flex-col items-center justify-center space-y-4 xl:order-1 order-1">
+      <!-- Responsive aspect ratio canvas holder -->
+      <div class="relative w-full max-w-[min(100vw-32px,calc(100vh-320px))] aspect-square rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-950">
+        <!-- Base Drawing Canvas -->
+        <canvas id="drawingCanvas" class="absolute inset-0 w-full h-full cursor-crosshair block" style="touch-action: none;"></canvas>
+        <!-- Guide overlay & Interactive Mirrored Cursor canvas -->
+        <canvas id="gridCanvas" class="absolute inset-0 w-full h-full pointer-events-none block"></canvas>
+      </div>
+
+      <!-- Action buttons directly below the canvas -->
+      <div class="flex flex-col sm:flex-row items-center justify-between w-full max-w-[min(100vw-32px,calc(100vh-320px))] gap-3">
+        
+        <!-- Undo, Redo, Clear (Primary Drawing Control Row) -->
+        <div class="grid grid-cols-3 gap-2 w-full sm:w-auto">
+          <button id="btn-undo" class="px-4 py-2.5 rounded-xl border border-neutral-850 text-neutral-600 bg-neutral-950/20 cursor-not-allowed flex items-center justify-center space-x-1.5 text-xs font-semibold transition-all" title="Undo Last Segment" disabled>
+            <!-- Undo Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            <span>Undo</span>
+          </button>
+
+          <button id="btn-redo" class="px-4 py-2.5 rounded-xl border border-neutral-850 text-neutral-600 bg-neutral-950/20 cursor-not-allowed flex items-center justify-center space-x-1.5 text-xs font-semibold transition-all" title="Redo Next Segment" disabled>
+            <!-- Redo Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+            <span>Redo</span>
+          </button>
+
+          <button id="btn-clear" class="px-4 py-2.5 rounded-xl border border-red-950/50 bg-red-950/15 text-red-400 hover:bg-red-950/30 transition-all flex items-center justify-center space-x-1.5 text-xs font-semibold" title="Clear entire canvas">
+            <!-- Trash Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+
+        <!-- Snapshot & Download actions -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button id="btn-snapshot" class="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-xs font-bold rounded-xl transition-all">
+            <!-- Save Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polygon points="17 21 17 13 7 13 7 21"/><polygon points="7 3 7 8 15 8"/></svg>
+            <span>Snapshot</span>
+          </button>
+
+          <button id="btn-download" class="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-95 text-white text-xs font-extrabold rounded-xl transition-all shadow-md">
+            <!-- Download Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Save HD PNG</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+    
+    <!-- SIDEBAR LEFT: RENDERING CONTROLS (Positioned below canvas on mobile, left side on desktop) -->
+    <section class="xl:col-span-4 bg-neutral-900/40 border border-neutral-800 rounded-3xl p-5 backdrop-blur-md flex flex-col justify-between space-y-6 h-fit xl:order-2 order-2">
+      <div class="space-y-6">
+        
+        <!-- TAB SYSTEM DESCRIPTORS -->
+        <div class="flex bg-neutral-950 p-1 rounded-xl border border-neutral-800">
+          <button id="tab-brushes" class="tab-btn flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-cyan-400">
+            <!-- Brush Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 22 1-1c1.4-1.4 2.4-3.2 3-5.2L18 9l-5-5-7 1.8c-2 1-3.8 2-5.2 3.6L1 12Z"/><path d="m19 6 3-3"/><path d="m20 10 2-2"/><path d="m14 4 2-2"/></svg>
+            <span>Brush Settings</span>
+          </button>
+          <button id="tab-palettes" class="tab-btn flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400 hover:text-neutral-200">
+            <!-- Palette Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.32143 19.4716 5.34038 20.2227 4.91572 20.7137C4.42621 21.2796 3.67046 21.433 3.02324 21.0543C1.69611 20.2778 0.771966 18.9171 0.435775 17.3483C0.0545939 15.5701 0.354181 13.6821 1.25895 12.0869C2.4586 9.97204 4.58284 8.5 7 8.5C7.82843 8.5 8.5 9.17157 8.5 10C8.5 10.8284 9.17157 11.5 10 11.5C10.8284 11.5 11.5 12.1716 11.5 13C11.5 13.8284 12.1716 14.5 13 14.5C14.1046 14.5 15 15.3954 15 16.5C15 17.3284 15.6716 18 16.5 18C17.3284 18 18 18.6716 18 19.5C18 20.8807 16.8807 22 15.5 22H12Z"/></svg>
+            <span>Colors & Fills</span>
+          </button>
+          <button id="tab-autodraw" class="tab-btn flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400 hover:text-neutral-200">
+            <!-- Sparkles -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            <span>Magic Auto</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: SYMMETRIC BRUSH CONFIGS -->
+        <div id="pane-brushes" class="space-y-5">
+          <!-- Slices & Mirrored configurations -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold tracking-wide text-neutral-300">Slices of Symmetry</span>
+              <span id="slices-display" class="text-xs bg-cyan-900/30 text-cyan-400 px-2.5 py-0.5 rounded-full border border-cyan-800/50 font-bold">
+                12 segments (24 mirrors)
+              </span>
+            </div>
+            <input id="slider-slices" type="range" min="2" max="64" value="12" class="w-full accent-cyan-400 bg-neutral-950 h-2 rounded-lg appearance-none cursor-pointer border border-neutral-800">
+            
+            <!-- Quick Slices Presets -->
+            <div class="grid grid-cols-6 gap-1">
+              <button class="slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800" data-value="4">4</button>
+              <button class="slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800" data-value="6">6</button>
+              <button class="slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800" data-value="8">8</button>
+              <button class="slice-preset py-1 text-xs rounded-md border border-cyan-500 bg-cyan-500/20 text-cyan-300" data-value="12">12</button>
+              <button class="slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800" data-value="16">16</button>
+              <button class="slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800" data-value="24">24</button>
+            </div>
+          </div>
+
+          <!-- Symmetrical reflection controls -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button id="toggle-mirror" class="flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-cyan-900/10 border-cyan-500/50 text-cyan-300 shadow-inner">
+              <!-- Layers Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-10 5 10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+              <span class="text-xs font-semibold" id="mirror-status">Mirror: On</span>
+            </button>
+
+            <button id="toggle-grid" class="flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-neutral-800 border-neutral-700 text-white">
+              <!-- Grid Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+              <span class="text-xs font-semibold" id="grid-status">Guides: On</span>
+            </button>
+          </div>
+
+          <div class="border-t border-neutral-800 my-4"></div>
+
+          <!-- Brush select grid -->
+          <div class="space-y-3">
+            <span class="text-sm font-semibold tracking-wide text-neutral-300 block">Brush Profile Type</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="brush-selector-container">
+              <!-- Dynamically populated brush buttons -->
+            </div>
+          </div>
+
+          <!-- Size, opacity & dynamic brush sliders -->
+          <div class="space-y-4 pt-2">
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="text-neutral-400">Brush Core Diameter</span>
+                <span class="text-neutral-200 font-semibold" id="brush-size-display">35px</span>
+              </div>
+              <input id="slider-brush-size" type="range" min="1" max="70" value="35" class="w-full accent-cyan-400 bg-neutral-950 h-2 rounded-lg appearance-none cursor-pointer border border-neutral-800">
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="text-neutral-400">Brush Opacity (Flow)</span>
+                <span class="text-neutral-200 font-semibold" id="brush-opacity-display">50%</span>
+              </div>
+              <input id="slider-brush-opacity" type="range" min="0.05" max="1.0" step="0.05" value="0.5" class="w-full accent-cyan-400 bg-neutral-950 h-2 rounded-lg appearance-none cursor-pointer border border-neutral-800">
+            </div>
+
+            <div class="flex items-center justify-between bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+              <div>
+                <span class="text-xs font-bold text-neutral-300 block">Dynamic Brush Pen Size</span>
+                <span class="text-[10px] text-neutral-500">Reacts dynamically based on movement speed</span>
+              </div>
+              <button id="toggle-dynabrush" class="relative inline-flex h-6 w-11 items-center rounded-full transition-all bg-cyan-500">
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-all translate-x-6" id="dynabrush-switch-dot"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: PALETTES & COLOR TRANSITIONS -->
+        <div id="pane-palettes" class="space-y-5 hidden">
+          <!-- Mode Selectors -->
+          <div class="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800">
+            <button id="mode-solid" class="color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400">
+              Solid Color Select
+            </button>
+            <button id="mode-rainbow" class="color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-pink-400 shadow">
+              Symmetric Rainbow Cycle
+            </button>
+          </div>
+
+          <!-- SOLID COLOR SELECTOR ACTIONS -->
+          <div id="solid-color-controls" class="space-y-4 hidden">
+            <div class="flex items-center space-x-3 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+              <input id="picker-color" type="color" value="#00e5ff" class="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer">
+              <div>
+                <span class="text-xs font-semibold text-neutral-400 block">Custom Color Picker</span>
+                <span id="picker-hex-val" class="text-xs text-neutral-100 font-mono font-bold uppercase">#00E5FF</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <span class="text-xs font-semibold text-neutral-400">Interactive Presets</span>
+              <div class="flex flex-wrap gap-2" id="color-presets-container">
+                <!-- Dynamically populated presets -->
+              </div>
+            </div>
+          </div>
+
+          <!-- RAINBOW GRADIENT PALETTES SELECTOR -->
+          <div id="rainbow-color-controls" class="space-y-4">
+            <span class="text-xs font-semibold text-neutral-400">Choose Shimmering Palette</span>
+            <div class="grid grid-cols-2 gap-2" id="palette-choices-container">
+              <!-- Dynamically populated gradient cards -->
+            </div>
+
+            <!-- Cycle Speed slider -->
+            <div class="space-y-2 pt-2">
+              <div class="flex justify-between text-xs">
+                <span class="text-neutral-400">Color Cycle Shift Rate</span>
+                <span class="text-neutral-200 font-semibold" id="cycle-speed-display">4x</span>
+              </div>
+              <input id="slider-cycle-speed" type="range" min="1" max="10" value="4" class="w-full accent-pink-500 bg-neutral-950 h-2 rounded-lg appearance-none cursor-pointer border border-neutral-800">
+            </div>
+          </div>
+
+          <div class="border-t border-neutral-800 my-4"></div>
+
+          <!-- Background color options -->
+          <div class="space-y-3">
+            <span class="text-xs font-semibold text-neutral-400 block">Workspace Background Color</span>
+            <div class="grid grid-cols-4 gap-2" id="bg-choices-container">
+              <!-- Dynamic background selections -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: GENERATIVE AUTODRAW CONTROLS -->
+        <div id="pane-autodraw" class="space-y-5 hidden">
+          <!-- Large Toggle Engage Button -->
+          <button id="toggle-autodraw-active" class="w-full py-4 px-6 rounded-2xl font-bold flex items-center justify-center space-x-3 transition-all bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 hover:opacity-90 text-white shadow-xl">
+            <span id="autodraw-play-icon">
+              <!-- Play Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-white"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </span>
+            <span id="autodraw-play-text">ENGAGE AUTODRAW ENGINE</span>
+          </button>
+
+          <div class="border-t border-neutral-800 my-2"></div>
+
+          <!-- Generative Algorithms Selector -->
+          <div class="space-y-3">
+            <span class="text-xs font-semibold text-neutral-400 block">Select Mathematical Algorithm</span>
+            <div class="space-y-2.5" id="autodraw-algos-container">
+              <!-- Dynamically populated algo selection list -->
+            </div>
+          </div>
+
+          <!-- Simulation Speed -->
+          <div class="space-y-2 pt-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-neutral-400">Simulation Computational Speed</span>
+              <span class="text-purple-400 font-bold" id="autodraw-speed-display">2x steps/frame</span>
+            </div>
+            <input id="slider-autodraw-speed" type="range" min="1" max="5" value="2" class="w-full accent-purple-500 bg-neutral-950 h-2 rounded-lg appearance-none cursor-pointer border border-neutral-800">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SIDEBAR RIGHT: SESSION SNAPSHOT GALLERY (No Global/Community tabs) -->
+    <section class="xl:col-span-2 bg-neutral-900/40 border border-neutral-800 rounded-3xl p-5 backdrop-blur-md flex flex-col h-[400px] xl:h-auto xl:order-3 order-3">
+      <div class="border-b border-neutral-800 pb-3 mb-4">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <span>Your Snapshots (<span id="local-gallery-count">0</span>)</span>
+        </h3>
+      </div>
+
+      <!-- GALLERY LIST CONTAINER -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar" id="gallery-container">
+        <!-- Snaps will load here dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: INTRO / MANUAL OVERLAY -->
+  <div id="modal-intro" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-600/10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-cyan-600/10 rounded-full blur-3xl"></div>
+      
+      <button id="close-intro" class="absolute top-4 right-4 p-1 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400">
+        <!-- Close Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="p-2 bg-gradient-to-tr from-cyan-400 to-purple-600 rounded-xl text-white">
+          <!-- Sparkles Icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        </div>
+        <h2 class="text-lg font-extrabold text-white">Kaleidoscope Studio</h2>
+      </div>
+
+      <p class="text-xs text-neutral-300 leading-relaxed mb-4">
+        Unleash intricate kaleidoscopic art, explore complex mirror configurations, and watch patterns emerge in seconds.
+      </p>
+
+      <div class="space-y-3 mb-6">
+        <span class="text-xs font-bold text-neutral-400 block uppercase tracking-wider">Features Guide:</span>
+        
+        <div class="flex items-start space-x-2.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5"></div>
+          <p class="text-xs text-neutral-300">
+            <strong class="text-cyan-300">Tactile Painting:</strong> Swipe or drag across the drawing canvas. Watch all symmetrical cursor lines track your point in real-time.
+          </p>
+        </div>
+
+        <div class="flex items-start space-x-2.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5"></div>
+          <p class="text-xs text-neutral-300">
+            <strong class="text-amber-300">Exploring parameters:</strong> Explore different Brush Settings, Colors and Fills to create unique and intricate patterns!
+          </p>
+        </div>
+
+        <div class="flex items-start space-x-2.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5"></div>
+          <p class="text-xs text-neutral-300">
+            <strong class="text-purple-300">Generative Machine:</strong> Engagement with "Autodraw Engine" launches automated bots traversing using gravity, orbits, or lissajous structures.
+          </p>
+        </div>
+
+        <div class="flex items-start space-x-2.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-pink-400 mt-1.5"></div>
+          <p class="text-xs text-neutral-300">
+            <strong class="text-pink-300">Relaxing Sounds:</strong> Enable "Relaxing Sounds" in the header to map brush coordinates to warm pentatonic chord chimes! (Desktop)
+          </p>
+        </div>
+      </div>
+
+      <button id="btn-dismiss-intro" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+        LET'S BEGIN
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: MOBILE INTERACTIVE SAVE HD OVERLAY (Solves Mobile Download Constraints) -->
+  <div id="modal-mobile-save" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/95 backdrop-blur-md hidden animate-fadeIn">
+    <div class="max-w-md w-full text-center space-y-4">
+      <h3 class="text-lg font-black text-white bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">Save Your Masterpiece</h3>
+      <p class="text-xs text-neutral-300 px-4 leading-relaxed">
+        Mobile browsers restrict direct file downloads. <br>
+        <span class="text-cyan-300 font-extrabold">Tap & hold (long press)</span> the image below to save it directly to your Photos!
+      </p>
+
+      <div class="relative bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden aspect-square w-full max-w-xs mx-auto shadow-2xl p-2">
+        <img id="mobile-save-img" src="" alt="Symmetric Canvas Image" class="w-full h-full object-contain rounded-xl select-all pointer-events-auto">
+      </div>
+
+      <button id="close-mobile-save" class="mt-4 px-6 py-2.5 bg-neutral-800 hover:bg-neutral-750 text-white text-xs font-bold rounded-xl transition-all">
+        Dismiss & Keep Painting
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert modal -->
+  <div id="modal-alert" class="fixed inset-0 flex items-center justify-center z-50 bg-black/60 p-4 hidden">
+    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 max-w-sm w-full text-center">
+      <h3 id="alert-title" class="text-md font-bold text-white mb-2">Notice</h3>
+      <p id="alert-body" class="text-xs text-neutral-400 mb-4"></p>
+      <button id="close-alert-btn" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-750 text-white rounded-lg text-xs font-bold">Acknowledge</button>
+    </div>
+  </div>
+
+  <script>
+    // --- SYSTEM STATE ---
+    let slices = 12;
+    let mirror = true;
+    let showGrid = true;
+    let brushType = 'glow'; // Default brush Neon Glow
+    let brushSize = 35; // Default brush size 35px
+    let opacity = 0.5; // Default brush opacity 50%
+    let dynaBrush = true; // Default dynamic brush on
+    let colorMode = 'rainbow';
+    let brushColor = '#00e5ff';
+    let selectedPalette = 'rainbow';
+    let colorCycleSpeed = 4;
+    let canvasBg = '#0a0a0c';
+
+    // Autodraw State
+    let autodrawActive = false;
+    let autodrawMode = 'wander';
+    let autodrawSpeed = 2;
+    let autodrawAgents = [];
+    let autodrawAnimationId = null;
+    let lastAutodrawTime = 0;
+
+    // Interactive Extras
+    let soundEnabled = false;
+    let savedPaintings = [];
+    let activeMainTab = 'brushes';
+
+    // Undo/Redo stack limit 25
+    let history = [];
+    let historyIndex = -1;
+
+    // Drawing helpers
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let colorPhase = 0;
+    let lastSoundTime = 0;
+
+    // Color definitions
+    const palettes = {
+      rainbow: (phase) => `hsla(${phase % 360}, 100%, 60%, var(--opacity))`,
+      neon: (phase) => {
+        const colors = [[255, 0, 127], [127, 0, 255], [0, 255, 255], [255, 255, 0]];
+        return interpolateColors(colors, (phase % 360) / 360);
+      },
+      sunset: (phase) => {
+        const colors = [[255, 94, 77], [255, 20, 147], [147, 112, 219], [255, 140, 0]];
+        return interpolateColors(colors, (phase % 360) / 360);
+      },
+      ocean: (phase) => {
+        const colors = [[0, 105, 148], [0, 206, 209], [127, 255, 212], [30, 144, 255]];
+        return interpolateColors(colors, (phase % 360) / 360);
+      },
+      cyberpunk: (phase) => {
+        const colors = [[5, 213, 250], [255, 0, 153], [238, 255, 0], [157, 0, 255]];
+        return interpolateColors(colors, (phase % 360) / 360);
+      },
+      aurora: (phase) => {
+        const colors = [[0, 255, 135], [96, 239, 255], [143, 0, 255], [0, 224, 140]];
+        return interpolateColors(colors, (phase % 360) / 360);
+      }
+    };
+
+    function interpolateColors(colorList, pct) {
+      const numColors = colorList.length;
+      const scale = pct * (numColors - 1);
+      const index = Math.min(Math.floor(scale), numColors - 2);
+      const localPct = scale - index;
+      const c1 = colorList[index];
+      const c2 = colorList[index + 1];
+      const r = Math.round(c1[0] + (c2[0] - c1[0]) * localPct);
+      const g = Math.round(c1[1] + (c2[1] - c1[1]) * localPct);
+      const b = Math.round(c1[2] + (c2[2] - c1[2]) * localPct);
+      return `rgba(${r}, ${g}, ${b}, var(--opacity))`;
+    }
+
+    // --- DOM REFERENCES ---
+    const dCanvas = document.getElementById('drawingCanvas');
+    const gCanvas = document.getElementById('gridCanvas');
+    const dCtx = dCanvas.getContext('2d');
+    const gCtx = gCanvas.getContext('2d');
+
+    // --- SYNTHESIZER UTILS (Web Audio API Pentatonic Scale) ---
+    let audioCtx = null;
+    let delayNode = null;
+    let filterNode = null;
+    let mainGain = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+      
+      delayNode = audioCtx.createDelay(1.0);
+      delayNode.delayTime.value = 0.35;
+      
+      const delayGain = audioCtx.createGain();
+      delayGain.gain.value = 0.45;
+      
+      delayNode.connect(delayGain);
+      delayGain.connect(delayNode);
+      
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.frequency.value = 1200;
+      
+      mainGain = audioCtx.createGain();
+      mainGain.gain.value = 0.12;
+      
+      filterNode.connect(mainGain);
+      mainGain.connect(audioCtx.destination);
+      delayNode.connect(mainGain);
+    }
+
+    function playNoteForPosition(radius, maxRadius) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      const scale = [
+        220.00, 261.63, 293.66, 329.63, 392.00, 
+        440.00, 523.25, 587.33, 659.25, 783.99, 
+        880.00, 1046.50, 1174.66, 1318.51, 1567.98, 1760.00
+      ];
+      
+      const ratio = Math.min(1, Math.max(0, radius / maxRadius));
+      const noteIndex = Math.min(Math.floor((1 - ratio) * scale.length), scale.length - 1);
+      const freq = scale[noteIndex];
+      
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      
+      oscGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      oscGain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 0.04);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
+      
+      osc.connect(oscGain);
+      oscGain.connect(filterNode);
+      oscGain.connect(delayNode);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.0);
+    }
+
+    function hexToRGBA(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function showAlert(title, message) {
+      document.getElementById('alert-title').innerText = title;
+      document.getElementById('alert-body').innerText = message;
+      document.getElementById('modal-alert').classList.remove('hidden');
+    }
+
+    document.getElementById('close-alert-btn').addEventListener('click', () => {
+      document.getElementById('modal-alert').classList.add('hidden');
+    });
+
+    // --- CANVAS RESOLUTION LOCK & INIT ---
+    function initCanvas() {
+      dCanvas.width = 1200;
+      dCanvas.height = 1200;
+      gCanvas.width = 1200;
+      gCanvas.height = 1200;
+
+      // Fill Background color
+      dCtx.fillStyle = canvasBg;
+      dCtx.fillRect(0, 0, dCanvas.width, dCanvas.height);
+
+      // Store initial state
+      const initialState = dCtx.getImageData(0, 0, dCanvas.width, dCanvas.height);
+      history = [initialState];
+      historyIndex = 0;
+
+      drawGuidelines();
+      updateHistoryButtons();
+    }
+
+    // --- GUIDELINES RENDERER ---
+    function drawGuidelines() {
+      gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+      if (!showGrid) return;
+
+      const cx = gCanvas.width / 2;
+      const cy = gCanvas.height / 2;
+      
+      const radius = Math.min(cx, cy) * 0.85;
+      const angleStep = (2 * Math.PI) / slices;
+
+      gCtx.save();
+      gCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      gCtx.lineWidth = 1.5;
+      gCtx.setLineDash([6, 8]);
+
+      // Radial Rays
+      gCtx.translate(cx, cy);
+      for (let i = 0; i < slices; i++) {
+        gCtx.beginPath();
+        gCtx.moveTo(0, 0);
+        gCtx.lineTo(0, -radius);
+        gCtx.stroke();
+        gCtx.rotate(angleStep);
+      }
+
+      // Concentric Guide Rings inside the scaled down circle
+      gCtx.beginPath();
+      gCtx.arc(0, 0, radius * 0.25, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      gCtx.beginPath();
+      gCtx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      gCtx.beginPath();
+      gCtx.arc(0, 0, radius * 0.75, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      gCtx.beginPath();
+      gCtx.arc(0, 0, radius, 0, Math.PI * 2);
+      gCtx.stroke();
+
+      gCtx.restore();
+    }
+
+    // --- SYMMETRICAL RENDERING ENGINE ---
+    function drawSymmetricSegment(x1, y1, x2, y2, brushWidth, strokeColor) {
+      const cx = dCanvas.width / 2;
+      const cy = dCanvas.height / 2;
+
+      dCtx.save();
+      dCtx.translate(cx, cy);
+
+      dCtx.lineWidth = brushWidth;
+      dCtx.lineCap = 'round';
+      dCtx.lineJoin = 'round';
+
+      const angleStep = (2 * Math.PI) / slices;
+
+      for (let i = 0; i < slices; i++) {
+        dCtx.save();
+        dCtx.rotate(i * angleStep);
+
+        dCtx.strokeStyle = strokeColor;
+        dCtx.fillStyle = strokeColor;
+
+        if (brushType === 'eraser') {
+          dCtx.globalCompositeOperation = 'destination-out';
+          dCtx.strokeStyle = 'rgba(0,0,0,1)';
+          dCtx.fillStyle = 'rgba(0,0,0,1)';
+        } else {
+          dCtx.globalCompositeOperation = 'source-over';
+        }
+
+        drawSegmentBasedOnBrush(dCtx, x1, y1, x2, y2, brushWidth);
+
+        if (mirror) {
+          dCtx.scale(1, -1);
+          drawSegmentBasedOnBrush(dCtx, x1, y1, x2, y2, brushWidth);
+        }
+
+        dCtx.restore();
+      }
+      dCtx.restore();
+    }
+
+    function drawSegmentBasedOnBrush(ctx, x1, y1, x2, y2, size) {
+      if (brushType === 'solid' || brushType === 'eraser') {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      } else if (brushType === 'calligraphy') {
+        const angle = Math.PI / 4;
+        const dx = (Math.cos(angle) * size) / 2;
+        const dy = (Math.sin(angle) * size) / 2;
+        ctx.beginPath();
+        ctx.moveTo(x1 - dx, y1 - dy);
+        ctx.lineTo(x1 + dx, y1 + dy);
+        ctx.lineTo(x2 + dx, y2 + dy);
+        ctx.lineTo(x2 - dx, y2 - dy);
+        ctx.closePath();
+        ctx.fill();
+      } else if (brushType === 'spray') {
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        const steps = Math.max(1, Math.floor(dist / 2));
+        for (let s = 0; s <= steps; s++) {
+          const t = s / steps;
+          const sx = x1 + (x2 - x1) * t;
+          const sy = y1 + (y2 - y1) * t;
+          const density = Math.max(4, Math.floor(size / 2.5));
+          for (let i = 0; i < density; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * size * 1.2;
+            const px = sx + Math.cos(angle) * radius;
+            const py = sy + Math.sin(angle) * radius;
+            ctx.fillRect(px, py, 1.5, 1.5);
+          }
+        }
+      } else if (brushType === 'ribbon') {
+        const offset = size * 0.6;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x1 + nx * offset, y1 + ny * offset);
+        ctx.lineTo(x2 + nx * offset, y2 + ny * offset);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x1 - nx * offset, y1 - ny * offset);
+        ctx.lineTo(x2 - nx * offset, y2 - ny * offset);
+        ctx.stroke();
+      } else if (brushType === 'glow') {
+        ctx.save();
+        ctx.shadowBlur = size * 1.5;
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner white core
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = size * 0.22;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+      } else if (brushType === 'star') {
+        const dist = Math.hypot(x2 - x1, y2 - y1);
+        const steps = Math.max(1, Math.floor(dist / (size * 1.8)));
+        for (let s = 0; s <= steps; s++) {
+          const t = s / steps;
+          const sx = x1 + (x2 - x1) * t;
+          const sy = y1 + (y2 - y1) * t;
+          drawStar(ctx, sx, sy, 5, size, size / 2.5);
+        }
+      }
+    }
+
+    function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+      let rot = (Math.PI / 2) * 3;
+      let x = cx;
+      let y = cy;
+      const step = Math.PI / spikes;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // --- CURSOR OVERLAY GRAPHICS ---
+    function drawSymmetricCursor(cx, cy, rx, ry) {
+      drawGuidelines();
+
+      gCtx.save();
+      gCtx.translate(cx, cy);
+      gCtx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      gCtx.lineWidth = 1.8;
+
+      const angleStep = (2 * Math.PI) / slices;
+
+      for (let i = 0; i < slices; i++) {
+        gCtx.save();
+        gCtx.rotate(i * angleStep);
+
+        // Draw cursor helper circle
+        gCtx.beginPath();
+        gCtx.arc(rx, ry, brushSize / 2, 0, Math.PI * 2);
+        gCtx.stroke();
+
+        if (mirror) {
+          gCtx.scale(1, -1);
+          gCtx.beginPath();
+          gCtx.arc(rx, ry, brushSize / 2, 0, Math.PI * 2);
+          gCtx.stroke();
+        }
+
+        gCtx.restore();
+      }
+      gCtx.restore();
+    }
+
+    // --- COORDINATE NORMALIZATION ---
+    function getCanvasCoords(e) {
+      const rect = dCanvas.getBoundingClientRect();
+      let clientX, clientY;
+
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      const screenX = clientX - rect.left;
+      const screenY = clientY - rect.top;
+
+      const x = (screenX / rect.width) * dCanvas.width;
+      const y = (screenY / rect.height) * dCanvas.height;
+
+      return { x, y };
+    }
+
+    // --- INPUT EVENT HANDLERS ---
+    function handlePointerDown(e) {
+      if (autodrawActive) {
+        toggleAutodraw();
+      }
+      if (soundEnabled) {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      isDrawing = true;
+      const coords = getCanvasCoords(e);
+      const cx = dCanvas.width / 2;
+      const cy = dCanvas.height / 2;
+
+      const rx = coords.x - cx;
+      const ry = coords.y - cy;
+
+      lastX = rx;
+      lastY = ry;
+
+      colorPhase = (colorPhase + colorCycleSpeed * 0.25) % 360;
+      const color = colorMode === 'rainbow'
+        ? palettes[selectedPalette](colorPhase).replace('var(--opacity)', opacity)
+        : hexToRGBA(brushColor, opacity);
+
+      drawSymmetricSegment(rx, ry, rx + 0.1, ry + 0.1, brushSize, color);
+
+      if (soundEnabled) {
+        const radius = Math.hypot(rx, ry);
+        playNoteForPosition(radius, cx * 0.85);
+        triggerRippleVisual();
+      }
+    }
+
+    // --- REDIRECT AND PRESERVE OTHER LISTENERS ---
+    function handlePointerMove(e) {
+      const cx = dCanvas.width / 2;
+      const cy = dCanvas.height / 2;
+      const coords = getCanvasCoords(e);
+      const rx = coords.x - cx;
+      const ry = coords.y - cy;
+
+      if (!isDrawing) {
+        drawSymmetricCursor(cx, cy, rx, ry);
+        return;
+      }
+
+      e.preventDefault();
+
+      let activeSize = brushSize;
+      if (dynaBrush) {
+        const distance = Math.hypot(rx - lastX, ry - lastY);
+        const speedFactor = Math.min(2.5, distance / 5);
+        activeSize = Math.max(2, brushSize * (1.2 - speedFactor * 0.35));
+      }
+
+      colorPhase = (colorPhase + colorCycleSpeed * 0.35) % 360;
+      const color = colorMode === 'rainbow'
+        ? palettes[selectedPalette](colorPhase).replace('var(--opacity)', opacity)
+        : hexToRGBA(brushColor, opacity);
+
+      drawSymmetricSegment(lastX, lastY, rx, ry, activeSize, color);
+
+      if (soundEnabled) {
+        const now = Date.now();
+        const dist = Math.hypot(rx - lastX, ry - lastY);
+        if (now - lastSoundTime > 110 && dist > 8) {
+          const radius = Math.hypot(rx, ry);
+          playNoteForPosition(radius, cx * 0.85);
+          triggerRippleVisual();
+          lastSoundTime = now;
+        }
+      }
+
+      lastX = rx;
+      lastY = ry;
+    }
+
+    function handlePointerUp() {
+      if (isDrawing) {
+        isDrawing = false;
+        saveHistoryState();
+      }
+    }
+
+    function handlePointerLeave() {
+      isDrawing = false;
+      drawGuidelines();
+    }
+
+    function triggerRippleVisual() {
+      const ripple = document.getElementById('header-ripple');
+      ripple.classList.remove('opacity-0');
+      ripple.classList.add('opacity-75');
+      setTimeout(() => {
+        ripple.classList.remove('opacity-75');
+        ripple.classList.add('opacity-0');
+      }, 500);
+    }
+
+    // --- UNDO / REDO HISTORY ENGINE ---
+    function saveHistoryState() {
+      const state = dCtx.getImageData(0, 0, dCanvas.width, dCanvas.height);
+      const newHistory = history.slice(0, historyIndex + 1);
+
+      if (newHistory.length >= 25) {
+        newHistory.shift();
+      }
+
+      history = [...newHistory, state];
+      historyIndex = history.length - 1;
+      updateHistoryButtons();
+    }
+
+    function handleUndo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        dCtx.putImageData(history[historyIndex], 0, 0);
+        updateHistoryButtons();
+      }
+    }
+
+    // --- REDO ---
+    function handleRedo() {
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        dCtx.putImageData(history[historyIndex], 0, 0);
+        updateHistoryButtons();
+      }
+    }
+
+    function updateHistoryButtons() {
+      const undoBtn = document.getElementById('btn-undo');
+      const redoBtn = document.getElementById('btn-redo');
+
+      if (historyIndex > 0) {
+        undoBtn.disabled = false;
+        undoBtn.classList.remove('border-neutral-850', 'text-neutral-600', 'bg-neutral-950/20', 'cursor-not-allowed');
+        undoBtn.classList.add('border-neutral-800', 'bg-neutral-950', 'text-neutral-300', 'hover:bg-neutral-800', 'hover:text-white');
+      } else {
+        undoBtn.disabled = true;
+        undoBtn.classList.add('border-neutral-850', 'text-neutral-600', 'bg-neutral-950/20', 'cursor-not-allowed');
+        undoBtn.classList.remove('border-neutral-800', 'bg-neutral-950', 'text-neutral-300', 'hover:bg-neutral-800', 'hover:text-white');
+      }
+
+      if (historyIndex < history.length - 1) {
+        redoBtn.disabled = false;
+        redoBtn.classList.remove('border-neutral-850', 'text-neutral-600', 'bg-neutral-950/20', 'cursor-not-allowed');
+        redoBtn.classList.add('border-neutral-800', 'bg-neutral-950', 'text-neutral-300', 'hover:bg-neutral-800', 'hover:text-white');
+      } else {
+        redoBtn.disabled = true;
+        redoBtn.classList.add('border-neutral-850', 'text-neutral-600', 'bg-neutral-950/20', 'cursor-not-allowed');
+        redoBtn.classList.remove('border-neutral-800', 'bg-neutral-950', 'text-neutral-300', 'hover:bg-neutral-800', 'hover:text-white');
+      }
+    }
+
+    function handleClear() {
+      dCtx.fillStyle = canvasBg;
+      dCtx.fillRect(0, 0, dCanvas.width, dCanvas.height);
+      saveHistoryState();
+    }
+
+    function handleBgChange(color) {
+      canvasBg = color;
+      dCtx.save();
+      dCtx.globalCompositeOperation = 'destination-over';
+      dCtx.fillStyle = color;
+      dCtx.fillRect(0, 0, dCanvas.width, dCanvas.height);
+      dCtx.restore();
+      saveHistoryState();
+      drawGuidelines();
+    }
+
+    // --- AUTODRAW PHYSICS SIMULATOR ---
+    function toggleAutodraw() {
+      if (autodrawActive) {
+        autodrawActive = false;
+        cancelAnimationFrame(autodrawAnimationId);
+        saveHistoryState();
+        document.getElementById('autodraw-play-text').innerText = 'ENGAGE AUTODRAW ENGINE';
+        document.getElementById('toggle-autodraw-active').className = "w-full py-4 px-6 rounded-2xl font-bold flex items-center justify-center space-x-3 transition-all bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 hover:opacity-90 text-white shadow-xl";
+        document.getElementById('autodraw-play-icon').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-white"><polygon points="6 3 20 12 6 21 6 3"/></svg>`;
+      } else {
+        if (soundEnabled) {
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+        }
+        autodrawActive = true;
+        initAutodrawAgents();
+        document.getElementById('autodraw-play-text').innerText = 'PAUSE GENERATIVE MACHINE';
+        document.getElementById('toggle-autodraw-active').className = "w-full py-4 px-6 rounded-2xl font-bold flex items-center justify-center space-x-3 transition-all bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg animate-pulse";
+        document.getElementById('autodraw-play-icon').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>`;
+        lastAutodrawTime = performance.now();
+        autodrawAnimationId = requestAnimationFrame(runAutodraw);
+      }
+    }
+
+    function initAutodrawAgents() {
+      const cx = dCanvas.width / 2;
+      const cy = dCanvas.height / 2;
+      const maxRadius = Math.min(cx, cy) * 0.85;
+
+      if (autodrawMode === 'wander') {
+        autodrawAgents = Array.from({ length: 3 }, (_, i) => ({
+          x: (Math.random() - 0.5) * maxRadius * 0.4,
+          y: (Math.random() - 0.5) * maxRadius * 0.4,
+          angle: Math.random() * Math.PI * 2,
+          size: brushSize,
+          colorPhase: i * 120
+        }));
+      } else if (autodrawMode === 'lissajous') {
+        autodrawAgents = [
+          { t: 0, speed: 0.012, a: 3, b: 5, size: brushSize, colorPhase: 0 },
+          { t: 0, speed: 0.009, a: 6, b: 7, size: brushSize * 0.8, colorPhase: 120 },
+          { t: 0, speed: 0.015, a: 2, b: 9, size: brushSize * 0.6, colorPhase: 240 }
+        ];
+      } else if (autodrawMode === 'orbit') {
+        autodrawAgents = Array.from({ length: 4 }, (_, i) => {
+          const angle = (i * Math.PI * 2) / 4;
+          const dist = maxRadius * (0.4 + Math.random() * 0.3);
+          return {
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist,
+            vx: -Math.sin(angle) * (3 + Math.random() * 2),
+            vy: Math.cos(angle) * (3 + Math.random() * 2),
+            size: brushSize * 0.8,
+            colorPhase: i * 90
+          };
+        });
+      } else if (autodrawMode === 'spiral') {
+        autodrawAgents = [
+          { theta: 0, direction: 1, size: brushSize, colorPhase: 0 }
+        ];
+      }
+    }
+
+    function runAutodraw(timestamp) {
+      if (!autodrawActive) return;
+
+      const cx = dCanvas.width / 2;
+      const cy = dCanvas.height / 2;
+      const maxRadius = Math.min(cx, cy) * 0.85;
+
+      const loops = autodrawSpeed;
+
+      for (let loop = 0; loop < loops; loop++) {
+        autodrawAgents.forEach((agent) => {
+          let prevX = agent.x;
+          let prevY = agent.y;
+
+          if (autodrawMode === 'wander') {
+            agent.angle += (Math.random() - 0.5) * 0.35;
+            const speed = 4;
+            agent.x += Math.cos(agent.angle) * speed;
+            agent.y += Math.sin(agent.angle) * speed;
+
+            const d = Math.hypot(agent.x, agent.y);
+            if (d > maxRadius) {
+              const pullAngle = Math.atan2(agent.y, agent.x) + Math.PI;
+              agent.angle = pullAngle + (Math.random() - 0.5) * 0.3;
+              agent.x = Math.cos(pullAngle + Math.PI) * (maxRadius - 10);
+              agent.y = Math.sin(pullAngle + Math.PI) * (maxRadius - 10);
+            }
+            if (dynaBrush) {
+              agent.size = brushSize * (0.45 + 0.55 * Math.sin(timestamp * 0.002));
+            } else {
+              agent.size = brushSize;
+            }
+          } 
+          else if (autodrawMode === 'lissajous') {
+            agent.t += agent.speed;
+            const range = maxRadius * 0.85;
+            agent.x = Math.sin(agent.a * agent.t) * range * 0.85;
+            agent.y = Math.cos(agent.b * agent.t) * range * 0.85;
+
+            if (agent.t === agent.speed) {
+              prevX = agent.x;
+              prevY = agent.y;
+            }
+            if (dynaBrush) {
+              agent.size = brushSize * (0.3 + 0.7 * Math.abs(Math.sin(agent.t * 3)));
+            } else {
+              agent.size = brushSize;
+            }
+          } 
+          else if (autodrawMode === 'orbit') {
+            const d2 = agent.x * agent.x + agent.y * agent.y || 1;
+            const dist = Math.sqrt(d2);
+            const pull = 2.2;
+            const ax = -agent.x * pull / dist;
+            const ay = -agent.y * pull / dist;
+
+            agent.vx += ax;
+            agent.vy += ay;
+
+            const currentSpeed = Math.hypot(agent.vx, agent.vy);
+            if (currentSpeed > 6.5) {
+              agent.vx = (agent.vx / currentSpeed) * 6.5;
+              agent.vy = (agent.vy / currentSpeed) * 6.5;
+            }
+
+            agent.x += agent.vx;
+            agent.y += agent.vy;
+
+            if (dynaBrush) {
+              agent.size = brushSize * (0.4 + 0.6 * (currentSpeed / 6.5));
+            } else {
+              agent.size = brushSize;
+            }
+          } 
+          else if (autodrawMode === 'spiral') {
+            agent.theta += 0.04;
+            const spiralRadius = (agent.theta * 2.5) % (maxRadius * 0.9);
+            agent.x = Math.cos(agent.theta) * spiralRadius;
+            agent.y = Math.sin(agent.theta) * spiralRadius;
+
+            if (agent.theta < 0.05) {
+              prevX = agent.x;
+              prevY = agent.y;
+            }
+            if (dynaBrush) {
+              agent.size = brushSize * (0.2 + 0.8 * (spiralRadius / maxRadius));
+            } else {
+              agent.size = brushSize;
+            }
+          }
+
+          agent.colorPhase = (agent.colorPhase + (colorMode === 'rainbow' ? colorCycleSpeed * 0.3 : 0)) % 360;
+          const color = colorMode === 'rainbow'
+            ? palettes[selectedPalette](agent.colorPhase).replace('var(--opacity)', opacity)
+            : hexToRGBA(brushColor, opacity);
+
+          drawSymmetricSegment(prevX, prevY, agent.x, agent.y, agent.size, color);
+
+          if (soundEnabled && loop === 0 && Math.random() < 0.015) {
+            const radius = Math.hypot(agent.x, agent.y);
+            playNoteForPosition(radius, cx * 0.85);
+            triggerRippleVisual();
+          }
+        });
+      }
+
+      if (timestamp - lastAutodrawTime > 6000) {
+        saveHistoryState();
+        lastAutodrawTime = timestamp;
+      }
+
+      autodrawAnimationId = requestAnimationFrame(runAutodraw);
+    }
+
+    // --- GALLERY CONTROLLER ---
+    function handleSaveToLocalGallery() {
+      const dataUrl = dCanvas.toDataURL('image/png');
+      const newPainting = {
+        id: Date.now(),
+        dataUrl,
+        slices,
+        mirror,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      savedPaintings = [newPainting, ...savedPaintings];
+      renderGallery();
+    }
+
+    // Comprehensive Mobile + Desktop HD Download Implementation
+    function handleDownloadImage() {
+      try {
+        const dataUrl = dCanvas.toDataURL('image/png');
+        
+        // Detect mobile user agent accurately
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          // Open Mobile Save Overlay
+          const saveModal = document.getElementById('modal-mobile-save');
+          const saveImg = document.getElementById('mobile-save-img');
+          saveImg.src = dataUrl;
+          saveModal.classList.remove('hidden');
+        } else {
+          // Standard highly reliable Blob downloading on Desktops
+          const binStr = atob(dataUrl.split(',')[1]);
+          const len = binStr.length;
+          const arr = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            arr[i] = binStr.charCodeAt(i);
+          }
+          const blob = new Blob([arr], { type: 'image/png' });
+          const blobUrl = URL.createObjectURL(blob);
+          
+          const link = document.createElement('a');
+          link.download = `kaleidoscope-${Date.now()}.png`;
+          link.href = blobUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        }
+      } catch (err) {
+        console.error("Save image failed:", err);
+        showAlert("Save Failed", "Please take a screenshot of your Kaleidoscope canvas instead.");
+      }
+    }
+
+    // --- RENDERING GALLERY LISTS (Session Snapshots Only) ---
+    function renderGallery() {
+      const container = document.getElementById('gallery-container');
+      container.innerHTML = '';
+
+      document.getElementById('local-gallery-count').innerText = savedPaintings.length;
+
+      if (savedPaintings.length === 0) {
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-4">
+            <div class="p-3 bg-neutral-950 rounded-full border border-neutral-850 mb-3 text-neutral-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            </div>
+            <p class="text-xs font-bold text-neutral-400">Empty Session</p>
+            <p class="text-[10px] text-neutral-500 mt-1 max-w-[150px]">
+              Tap "Snapshot" below the canvas to save progress versions here!
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'grid grid-cols-2 xl:grid-cols-1 gap-2 animate-fadeIn';
+
+      savedPaintings.forEach(painting => {
+        const item = document.createElement('div');
+        item.className = 'group relative bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden shadow p-1.5 transition-all hover:border-cyan-500/50';
+        item.innerHTML = `
+          <div class="aspect-square w-full rounded-lg overflow-hidden bg-neutral-900 relative">
+            <img src="${painting.dataUrl}" alt="Your Snapshot" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5">
+              <button class="load-btn px-2 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-bold shadow transition-transform active:scale-95">
+                Load
+              </button>
+              <button class="download-item-btn p-1 bg-neutral-800 hover:bg-neutral-700 text-white rounded shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
+              <button class="delete-item-btn p-1 bg-red-950/80 hover:bg-red-900 text-red-300 rounded shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="mt-1 flex items-center justify-between px-1 xl:hidden">
+            <span class="text-[9px] text-neutral-500">${painting.slices} slices</span>
+            <span class="text-[9px] text-neutral-400 font-bold">${painting.timestamp}</span>
+          </div>
+        `;
+
+        // Event hooks for hover action overlays
+        item.querySelector('.load-btn').addEventListener('click', () => {
+          const img = new Image();
+          img.onload = () => {
+            dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+            dCtx.drawImage(img, 0, 0, dCanvas.width, dCanvas.height);
+            saveHistoryState();
+          };
+          img.src = painting.dataUrl;
+        });
+
+        item.querySelector('.download-item-btn').addEventListener('click', () => {
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          if (isMobile) {
+            const saveModal = document.getElementById('modal-mobile-save');
+            const saveImg = document.getElementById('mobile-save-img');
+            saveImg.src = painting.dataUrl;
+            saveModal.classList.remove('hidden');
+          } else {
+            const link = document.createElement('a');
+            link.download = 'my-kaleidoscope-snapshot.png';
+            link.href = painting.dataUrl;
+            link.click();
+          }
+        });
+
+        item.querySelector('.delete-item-btn').addEventListener('click', () => {
+          savedPaintings = savedPaintings.filter(p => p.id !== painting.id);
+          renderGallery();
+        });
+
+        grid.appendChild(item);
+      });
+
+      container.appendChild(grid);
+    }
+
+    // --- DOM POPULATION AND EVENT BINDING ---
+    function setupDOMElements() {
+      // Setup dynamic brushes
+      const brushTypes = [
+        { id: 'solid', label: 'Classic Pen' },
+        { id: 'calligraphy', label: 'Calligraphy' },
+        { id: 'spray', label: 'Spray Paint' },
+        { id: 'ribbon', label: 'Ribbon Trail' },
+        { id: 'glow', label: 'Neon Glow' },
+        { id: 'star', label: 'Star Stamp' },
+        { id: 'eraser', label: 'Eraser Pen' }
+      ];
+
+      const brushSelectorContainer = document.getElementById('brush-selector-container');
+      brushSelectorContainer.innerHTML = '';
+      brushTypes.forEach(b => {
+        const btn = document.createElement('button');
+        btn.id = `brush-opt-${b.id}`;
+        btn.className = `py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex flex-col items-center justify-center space-y-1 ${
+          brushType === b.id 
+            ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 font-bold shadow-lg shadow-cyan-950/25' 
+            : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+        }`;
+        btn.innerHTML = `<span class="truncate">${b.label}</span>`;
+        btn.addEventListener('click', () => selectBrushType(b.id));
+        brushSelectorContainer.appendChild(btn);
+      });
+
+      // Preset colors population
+      const colorPresets = ['#ffffff', '#ff2a5f', '#ffaa00', '#00ff66', '#00e5ff', '#9900ff', '#ff00ff'];
+      const presetsContainer = document.getElementById('color-presets-container');
+      presetsContainer.innerHTML = '';
+      colorPresets.forEach(preset => {
+        const btn = document.createElement('button');
+        btn.className = "w-8 h-8 rounded-full border border-neutral-700/60 transition-transform active:scale-95 focus:outline-none";
+        btn.style.backgroundColor = preset;
+        btn.addEventListener('click', () => {
+          brushColor = preset;
+          document.getElementById('picker-color').value = preset;
+          document.getElementById('picker-hex-val').innerText = preset.toUpperCase();
+        });
+        presetsContainer.appendChild(btn);
+      });
+
+      // Palette Cards population
+      const gradientPalettes = [
+        { id: 'rainbow', name: 'Infinite Rainbow', gradient: 'from-red-500 via-green-500 to-blue-500' },
+        { id: 'neon', name: 'Neon Horizon', gradient: 'from-pink-500 via-purple-600 to-cyan-400' },
+        { id: 'sunset', name: 'Sunset Dreams', gradient: 'from-orange-400 via-pink-500 to-indigo-600' },
+        { id: 'ocean', name: 'Ocean Breeze', gradient: 'from-teal-400 via-cyan-500 to-blue-600' },
+        { id: 'cyberpunk', name: 'Acid Cyberpunk', gradient: 'from-yellow-300 via-pink-600 to-purple-600' },
+        { id: 'aurora', name: 'Aurora Borealis', gradient: 'from-green-400 via-teal-400 to-purple-600' }
+      ];
+
+      const paletteContainer = document.getElementById('palette-choices-container');
+      paletteContainer.innerHTML = '';
+      gradientPalettes.forEach(p => {
+        const btn = document.createElement('button');
+        btn.id = `palette-opt-${p.id}`;
+        btn.className = `p-3 rounded-xl border text-left transition-all ${
+          selectedPalette === p.id 
+            ? 'border-pink-500/55 bg-neutral-950 text-white font-bold' 
+            : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200'
+        }`;
+        btn.innerHTML = `
+          <div class="h-2.5 w-full rounded-full bg-gradient-to-r ${p.gradient} mb-2"></div>
+          <span class="text-xs font-bold block">${p.name}</span>
+        `;
+        btn.addEventListener('click', () => selectGradientPalette(p.id));
+        paletteContainer.appendChild(btn);
+      });
+
+      // Background list population
+      const backgroundChoices = [
+        { label: 'Obsidian', hex: '#0a0a0c' },
+        { label: 'Ember', hex: '#16080b' },
+        { label: 'Deep Sea', hex: '#050c14' },
+        { label: 'Solitude', hex: '#f0f3f6' }
+      ];
+
+      const bgContainer = document.getElementById('bg-choices-container');
+      bgContainer.innerHTML = '';
+      backgroundChoices.forEach(bg => {
+        const btn = document.createElement('button');
+        btn.id = `bg-opt-${bg.label.replace(/\s+/g, '')}`;
+        btn.className = `py-2 px-1 rounded-xl text-[10px] font-bold border transition-all truncate ${
+          canvasBg === bg.hex 
+            ? 'bg-neutral-800 text-white border-neutral-600' 
+            : 'bg-neutral-950 text-neutral-400 border-neutral-900 hover:border-neutral-800'
+        }`;
+        btn.style.borderLeft = `4px solid ${bg.hex}`;
+        btn.innerText = bg.label;
+        btn.addEventListener('click', () => {
+          handleBgChange(bg.hex);
+          document.querySelectorAll('#bg-choices-container button').forEach(b => {
+            b.className = b.className.replace('bg-neutral-800 text-white border-neutral-600', 'bg-neutral-950 text-neutral-400 border-neutral-900 hover:border-neutral-800');
+          });
+          btn.className = `py-2 px-1 rounded-xl text-[10px] font-bold border transition-all truncate bg-neutral-800 text-white border-neutral-600`;
+        });
+        bgContainer.appendChild(btn);
+      });
+
+      // Mathematical Algo selection menu population
+      const algos = [
+        { id: 'wander', name: 'Wandering Butterfly', desc: 'Slight randomized heading steering for organic chaotic growth.' },
+        { id: 'lissajous', name: 'Lissajous Symphonies', desc: 'Harmonic trigonometric curves forming beautiful layered stars.' },
+        { id: 'orbit', name: 'Gravity Orbiters', desc: 'Gravitational simulation pulling orbits around the canvas center.' },
+        { id: 'spiral', name: 'Golden Spiral', desc: 'Continuous golden ratio spiral sweeping outward with size expansions.' }
+      ];
+
+      const algosContainer = document.getElementById('autodraw-algos-container');
+      algosContainer.innerHTML = '';
+      algos.forEach(algo => {
+        const btn = document.createElement('button');
+        btn.id = `algo-opt-${algo.id}`;
+        btn.className = `w-full p-3 rounded-xl border text-left transition-all flex items-start space-x-3 ${
+          autodrawMode === algo.id 
+            ? 'border-purple-500/60 bg-neutral-950 text-white font-bold' 
+            : 'border-neutral-850 bg-neutral-950/30 hover:border-neutral-800 text-neutral-400 hover:text-neutral-200'
+        }`;
+        btn.innerHTML = `
+          <div class="mt-0.5 p-1.5 rounded-lg ${
+            autodrawMode === algo.id ? 'bg-purple-900/40 text-purple-400' : 'bg-neutral-900 text-neutral-600'
+          }">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+          </div>
+          <div>
+            <span class="text-xs font-bold block">${algo.name}</span>
+            <span class="text-[10px] text-neutral-500 font-normal leading-relaxed mt-0.5 block">${algo.desc}</span>
+          </div>
+        `;
+        btn.addEventListener('click', () => {
+          if (!autodrawActive) {
+            selectAutodrawAlgo(algo.id);
+          }
+        });
+        algosContainer.appendChild(btn);
+      });
+    }
+
+    function selectBrushType(type) {
+      brushType = type;
+      document.querySelectorAll('#brush-selector-container button').forEach(b => {
+        b.className = 'py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex flex-col items-center justify-center space-y-1 bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200';
+      });
+      const activeBtn = document.getElementById(`brush-opt-${type}`);
+      if (activeBtn) {
+        activeBtn.className = 'py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex flex-col items-center justify-center space-y-1 bg-cyan-500/15 border-cyan-400 text-cyan-300 font-bold shadow-lg shadow-cyan-950/25';
+      }
+    }
+
+    function selectGradientPalette(id) {
+      selectedPalette = id;
+      document.querySelectorAll('#palette-choices-container button').forEach(b => {
+        b.className = 'p-3 rounded-xl border text-left transition-all border-neutral-800 bg-neutral-950/40 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200';
+      });
+      const activeBtn = document.getElementById(`palette-opt-${id}`);
+      if (activeBtn) {
+        activeBtn.className = 'p-3 rounded-xl border text-left transition-all border-pink-500/55 bg-neutral-950 text-white font-bold';
+      }
+    }
+
+    function selectAutodrawAlgo(id) {
+      autodrawMode = id;
+      document.querySelectorAll('#autodraw-algos-container button').forEach(b => {
+        b.className = 'w-full p-3 rounded-xl border text-left transition-all flex items-start space-x-3 border-neutral-850 bg-neutral-950/30 hover:border-neutral-800 text-neutral-400 hover:text-neutral-200';
+        const insideIcon = b.querySelector('div');
+        if (insideIcon) {
+          insideIcon.className = 'mt-0.5 p-1.5 rounded-lg bg-neutral-900 text-neutral-600';
+        }
+      });
+      const activeBtn = document.getElementById(`algo-opt-${id}`);
+      if (activeBtn) {
+        activeBtn.className = 'w-full p-3 rounded-xl border text-left transition-all flex items-start space-x-3 border-purple-500/60 bg-neutral-950 text-white font-bold';
+        const insideIcon = activeBtn.querySelector('div');
+        if (insideIcon) {
+          insideIcon.className = 'mt-0.5 p-1.5 rounded-lg bg-purple-900/40 text-purple-400';
+        }
+      }
+    }
+
+    // --- Tab Switcher Logic ---
+    function selectMainTab(tab) {
+      activeMainTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = 'flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400 hover:text-neutral-200';
+      });
+      
+      const panes = ['pane-brushes', 'pane-palettes', 'pane-autodraw'];
+      panes.forEach(pane => document.getElementById(pane).classList.add('hidden'));
+
+      if (tab === 'brushes') {
+        document.getElementById('tab-brushes').className = 'flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-cyan-400';
+        document.getElementById('pane-brushes').classList.remove('hidden');
+      } else if (tab === 'palettes') {
+        document.getElementById('tab-palettes').className = 'flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-pink-400 shadow';
+        document.getElementById('pane-palettes').classList.remove('hidden');
+      } else if (tab === 'autodraw') {
+        document.getElementById('tab-autodraw').className = 'flex-1 flex items-center justify-center space-x-1.5 py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-purple-400 shadow';
+        document.getElementById('pane-autodraw').classList.remove('hidden');
+      }
+    }
+
+    // --- BIND EVENT LISTENERS ---
+    function bindInteractions() {
+      // Slices Change
+      document.getElementById('slider-slices').addEventListener('input', (e) => {
+        slices = parseInt(e.target.value);
+        document.getElementById('slices-display').innerText = `${slices} segments (${slices * (mirror ? 2 : 1)} mirrors)`;
+        drawGuidelines();
+      });
+
+      // Quick Slices presets
+      document.querySelectorAll('.slice-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.slice-preset').forEach(p => p.className = 'slice-preset py-1 text-xs rounded-md border border-neutral-850 hover:bg-neutral-800');
+          btn.className = 'slice-preset py-1 text-xs rounded-md border border-cyan-500 bg-cyan-500/20 text-cyan-300';
+          slices = parseInt(btn.getAttribute('data-value'));
+          document.getElementById('slider-slices').value = slices;
+          document.getElementById('slices-display').innerText = `${slices} segments (${slices * (mirror ? 2 : 1)} mirrors)`;
+          drawGuidelines();
+        });
+      });
+
+      // Mirror Toggle
+      document.getElementById('toggle-mirror').addEventListener('click', () => {
+        mirror = !mirror;
+        const statusSpan = document.getElementById('mirror-status');
+        const btn = document.getElementById('toggle-mirror');
+        if (mirror) {
+          btn.className = "flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-cyan-900/10 border-cyan-500/50 text-cyan-300 shadow-inner";
+          statusSpan.innerText = "Mirror: On";
+        } else {
+          btn.className = "flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700";
+          statusSpan.innerText = "Rotation Only";
+        }
+        document.getElementById('slices-display').innerText = `${slices} segments (${slices * (mirror ? 2 : 1)} mirrors)`;
+        drawGuidelines();
+      });
+
+      // Guidelines Grid Toggle
+      document.getElementById('toggle-grid').addEventListener('click', () => {
+        showGrid = !showGrid;
+        const btn = document.getElementById('toggle-grid');
+        const statusSpan = document.getElementById('grid-status');
+        if (showGrid) {
+          btn.className = "flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-neutral-800 border-neutral-700 text-white";
+          statusSpan.innerText = "Guides: On";
+        } else {
+          btn.className = "flex items-center justify-center space-x-2 py-2.5 rounded-xl border transition-all bg-neutral-950 border-neutral-800 text-neutral-500 hover:border-neutral-700";
+          statusSpan.innerText = "Guides: Off";
+        }
+        drawGuidelines();
+      });
+
+      // Size Slider
+      document.getElementById('slider-brush-size').addEventListener('input', (e) => {
+        brushSize = parseInt(e.target.value);
+        document.getElementById('brush-size-display').innerText = `${brushSize}px`;
+      });
+
+      // Opacity Slider
+      document.getElementById('slider-brush-opacity').addEventListener('input', (e) => {
+        opacity = parseFloat(e.target.value);
+        document.getElementById('brush-opacity-display').innerText = `${Math.round(opacity * 100)}%`;
+      });
+
+      // Dynamic Brush Switch
+      document.getElementById('toggle-dynabrush').addEventListener('click', () => {
+        dynaBrush = !dynaBrush;
+        const btn = document.getElementById('toggle-dynabrush');
+        const switchDot = document.getElementById('dynabrush-switch-dot');
+        if (dynaBrush) {
+          btn.className = "relative inline-flex h-6 w-11 items-center rounded-full transition-all bg-cyan-500";
+          switchDot.className = "inline-block h-4 w-4 transform rounded-full bg-white transition-all translate-x-6";
+        } else {
+          btn.className = "relative inline-flex h-6 w-11 items-center rounded-full transition-all bg-neutral-800";
+          switchDot.className = "inline-block h-4 w-4 transform rounded-full bg-white transition-all translate-x-1";
+        }
+      });
+
+      // Color Cycle Rate Slider
+      document.getElementById('slider-cycle-speed').addEventListener('input', (e) => {
+        colorCycleSpeed = parseInt(e.target.value);
+        document.getElementById('cycle-speed-display').innerText = `${colorCycleSpeed}x`;
+      });
+
+      // Autodraw Multiplier speed Slider
+      document.getElementById('slider-autodraw-speed').addEventListener('input', (e) => {
+        autodrawSpeed = parseInt(e.target.value);
+        document.getElementById('autodraw-speed-display').innerText = `${autodrawSpeed}x steps/frame`;
+      });
+
+      // Color Pickers
+      document.getElementById('picker-color').addEventListener('input', (e) => {
+        brushColor = e.target.value;
+        document.getElementById('picker-hex-val').innerText = brushColor.toUpperCase();
+      });
+
+      // Left panel Tab buttons
+      document.getElementById('tab-brushes').addEventListener('click', () => selectMainTab('brushes'));
+      document.getElementById('tab-palettes').addEventListener('click', () => selectMainTab('palettes'));
+      document.getElementById('tab-autodraw').addEventListener('click', () => selectMainTab('autodraw'));
+
+      // Solid vs Rainbow mode toggle
+      document.getElementById('mode-solid').addEventListener('click', () => {
+        colorMode = 'solid';
+        document.getElementById('mode-solid').className = 'color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-white shadow';
+        document.getElementById('mode-rainbow').className = 'color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400';
+        document.getElementById('solid-color-controls').classList.remove('hidden');
+        document.getElementById('rainbow-color-controls').classList.add('hidden');
+      });
+
+      document.getElementById('mode-rainbow').addEventListener('click', () => {
+        colorMode = 'rainbow';
+        document.getElementById('mode-solid').className = 'color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all text-neutral-400';
+        document.getElementById('mode-rainbow').className = 'color-mode-btn py-2 rounded-lg text-xs font-semibold transition-all bg-neutral-800 text-pink-400 shadow';
+        document.getElementById('solid-color-controls').classList.add('hidden');
+        document.getElementById('rainbow-color-controls').classList.remove('hidden');
+      });
+
+      // Dynamic cursor actions on canvas
+      dCanvas.addEventListener('mousedown', handlePointerDown);
+      dCanvas.addEventListener('mousemove', handlePointerMove);
+      dCanvas.addEventListener('mouseup', handlePointerUp);
+      dCanvas.addEventListener('mouseleave', handlePointerLeave);
+
+      // Web Audio Unlocking on Mobile (iOS / Android require touchstart trigger context to resume)
+      dCanvas.addEventListener('touchstart', (e) => {
+        if (soundEnabled) {
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+        }
+        handlePointerDown(e);
+        e.preventDefault();
+      }, { passive: false });
+      dCanvas.addEventListener('touchmove', (e) => {
+        handlePointerMove(e);
+        e.preventDefault();
+      }, { passive: false });
+      dCanvas.addEventListener('touchend', handlePointerUp);
+
+      // primary canvas drawing controls
+      document.getElementById('btn-undo').addEventListener('click', handleUndo);
+      document.getElementById('btn-redo').addEventListener('click', handleRedo);
+      document.getElementById('btn-clear').addEventListener('click', handleClear);
+
+      // Centered primary canvas actions
+      document.getElementById('btn-snapshot').addEventListener('click', handleSaveToLocalGallery);
+      document.getElementById('btn-download').addEventListener('click', handleDownloadImage);
+
+      // Audio synth switcher with Mobile Unlock
+      document.getElementById('toggle-synth').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        const synthText = document.getElementById('synth-text');
+        const synthIcon = document.getElementById('synth-icon');
+        const synthBtn = document.getElementById('toggle-synth');
+
+        if (soundEnabled) {
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+          triggerRippleVisual();
+          synthBtn.className = "hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-900/40 animate-pulse";
+          synthText.innerText = "Synthesizer On";
+          synthIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+        } else {
+          synthBtn.className = "hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all bg-neutral-800 hover:bg-neutral-700 text-neutral-300";
+          synthText.innerText = "Relaxing Sounds";
+          synthIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>`;
+        }
+      });
+
+      // Autodraw active
+      document.getElementById('toggle-autodraw-active').addEventListener('click', toggleAutodraw);
+
+      // Info trigger
+      document.getElementById('btn-info').addEventListener('click', () => {
+        document.getElementById('modal-intro').classList.remove('hidden');
+      });
+
+      document.getElementById('close-intro').addEventListener('click', () => {
+        document.getElementById('modal-intro').classList.add('hidden');
+      });
+
+      document.getElementById('btn-dismiss-intro').addEventListener('click', () => {
+        document.getElementById('modal-intro').classList.add('hidden');
+      });
+
+      // Close mobile download pop-up overlay
+      document.getElementById('close-mobile-save').addEventListener('click', () => {
+        document.getElementById('modal-mobile-save').classList.add('hidden');
+      });
+    }
+
+    // --- WINDOW LOAD INITIALIZATION ---
+    window.onload = function() {
+      setupDOMElements();
+      bindInteractions();
+      initCanvas();
+      renderGallery();
+    };
+  </script>
+</body>
+</html>
