@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbital Painting Studio</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons Client-side CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Styling range inputs with uniform modern dark aesthetic */
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: #0f172a;
+      height: 4px;
+      border-radius: 9999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      margin-top: -6px;
+      background-color: #6366f1;
+      height: 16px;
+      width: 16px;
+      border-radius: 9999px;
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.1s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    input[type="range"].accent-teal::-webkit-slider-thumb {
+      background-color: #0d9488;
+    }
+    input[type="range"].accent-pink::-webkit-slider-thumb {
+      background-color: #db2777;
+    }
+    
+    /* Custom scrollbar for layer config panel */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen selection:bg-indigo-500/30">
+
+  <!-- Toast Notification Wrapper -->
+  <div id="toastContainer" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <!-- Bulletproof Mobile Export Fallback Modal -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center hidden p-4 backdrop-blur-md">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full text-center space-y-4 shadow-2xl relative">
+      <button id="closeExportModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-1 rounded-full hover:bg-slate-800">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="font-bold text-lg text-slate-100 tracking-wide">Your Artwork is Ready!</h3>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        If the automatic download didn't start on your device, simply <strong class="text-indigo-400">press and hold</strong> the image below to save it directly to your photos.
+      </p>
+      <div class="bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex justify-center p-2 max-h-[50vh]">
+        <img id="exportImagePreview" class="max-w-full max-h-[40vh] object-contain rounded-lg" alt="Your Artwork Preview">
+      </div>
+      <div class="flex gap-2">
+        <button id="modalDownloadBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-xs sm:text-sm transition-all shadow-md">
+          Try Download Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col items-center p-2 sm:p-4 md:p-6 w-full">
+    
+    <!-- Clickable Header Block -->
+    <a href="https://www.instagram.com/calvin_chak_art" target="_blank" rel="noopener noreferrer" class="group block mb-8 mt-4 text-center max-w-2xl px-4 hover:opacity-95 transition-all duration-300">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-300 via-indigo-300 to-pink-400 group-hover:scale-[1.01] transition-all duration-300">
+        Orbital Painting Studio
+      </h1>
+      <p class="text-slate-400 text-xs sm:text-sm mt-2 font-medium tracking-wide group-hover:text-indigo-300 transition-colors duration-200">
+        Made by Calvin Chak (IG @calvin_chak_art)
+      </p>
+    </a>
+
+    <!-- Main Studio Dashboard Layout (Canvas top, parameters below, presets bottom) -->
+    <div class="w-full max-w-7xl space-y-6">
+      
+      <!-- SECTION 1: Painting Canvas & HUD View Mode Toggles (Top of Dashboard) -->
+      <div class="space-y-4">
+        
+        <div class="relative bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-800">
+          
+          <!-- Core Canvas Container -->
+          <div 
+            id="canvasContainer"
+            class="relative w-full overflow-hidden select-none cursor-crosshair" 
+            style="height: 520px;"
+          >
+            <!-- Canvas layers styled to support smooth transitions and precise scaling from geographic center -->
+            <canvas id="trailCanvas" class="absolute top-0 left-0 transition-transform duration-200 ease-out origin-center"></canvas>
+            <canvas id="overlayCanvas" class="absolute top-0 left-0 pointer-events-none transition-transform duration-200 ease-out origin-center"></canvas>
+
+            <!-- Floating Elegant Zoom Controls -->
+            <div class="absolute bottom-4 right-4 z-20 flex items-center gap-1 bg-slate-900/90 border border-slate-800 p-1.5 rounded-lg shadow-2xl backdrop-blur-md">
+              <button id="zoomOutBtn" class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors" title="Zoom Out">
+                <i data-lucide="zoom-out" class="w-4 h-4"></i>
+              </button>
+              <span id="zoomVal" class="text-xs font-mono font-bold text-slate-300 px-1.5 select-none min-w-[44px] text-center">100%</span>
+              <button id="zoomInBtn" class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors" title="Zoom In">
+                <i data-lucide="zoom-in" class="w-4 h-4"></i>
+              </button>
+              <button id="zoomResetBtn" class="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-white rounded transition-colors border-l border-slate-800/60 pl-2 ml-1" title="Reset Zoom to 100%">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Utility Control Bar below canvas -->
+          <div class="bg-slate-900/90 border-t border-slate-800/80 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex gap-2">
+              <button
+                id="playPauseBtn"
+                class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md bg-amber-600 hover:bg-amber-500 text-white"
+              >
+                <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+                <span id="playPauseText">Pause Engine</span>
+              </button>
+
+              <button
+                id="clearCanvasBtn"
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors border border-slate-700"
+                title="Wipe canvas clear"
+              >
+                <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Clear Canvas
+              </button>
+            </div>
+
+            <div class="flex gap-1.5">
+              <button
+                id="scrambleBtn"
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors text-xs font-medium"
+                title="Scramble values"
+              >
+                <i data-lucide="shuffle" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Randomize</span>
+              </button>
+              
+              <button
+                id="downloadBtn"
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-xs transition-all shadow-lg shadow-indigo-600/10 border border-indigo-500"
+                title="Export artwork as PNG image"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export PNG
+              </button>
+
+              <button
+                id="factoryResetBtn"
+                class="p-1.5 bg-slate-800 hover:bg-rose-950/40 hover:text-rose-400 hover:border-rose-800/50 text-slate-400 rounded-lg border border-slate-700 transition-colors"
+                title="Factory reset everything"
+              >
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HUD View Config Toggles -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button 
+            id="toggleTips"
+            class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wider uppercase border transition-all bg-slate-900 border-indigo-500/40 text-indigo-300"
+          >
+            <i data-lucide="mouse-pointer2" class="w-3.5 h-3.5"></i> Brush Tips
+          </button>
+          <button 
+            id="toggleStructure"
+            class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wider uppercase border transition-all bg-slate-900 border-indigo-500/40 text-indigo-300"
+          >
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i> Pendulums
+          </button>
+          <button 
+            id="toggleCircles"
+            class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wider uppercase border transition-all bg-slate-900 border-indigo-500/40 text-indigo-300"
+          >
+            <i data-lucide="circle" class="w-3.5 h-3.5"></i> Orbit Rings
+          </button>
+          <button 
+            id="toggleCenters"
+            class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wider uppercase border transition-all bg-slate-900 border-indigo-500/40 text-indigo-300"
+          >
+            <i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Joint Joints
+          </button>
+        </div>
+
+      </div>
+
+      <!-- SECTION 2: Control Panel Grid containing Physics, Brushes, and Layers (3 Columns) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Space-Time Engine Parameters -->
+        <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl shadow-xl backdrop-blur-md space-y-5">
+          <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-800 pb-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-teal-400"></i> Space-Time Engine
+          </h3>
+          
+          <!-- Speed Factor Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+              <span>Speed Multiplier</span>
+              <span id="speedVal" class="text-teal-400 font-mono">1x</span>
+            </div>
+            <input
+              type="range"
+              id="speedMultiplier"
+              min="0.1"
+              max="4.0"
+              step="0.1"
+              value="1"
+              class="w-full h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-teal-400"
+            />
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>0.1x (Slow Motion)</span>
+              <span>4.0x (Hyperwarp)</span>
+            </div>
+          </div>
+
+          <!-- Symmetry Axes Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+              <span>Radial Symmetries</span>
+              <span id="symmetryVal" class="text-indigo-400 font-mono">6 Axes</span>
+            </div>
+            <input
+              type="range"
+              id="symmetry"
+              min="1"
+              max="16"
+              step="1"
+              value="6"
+              class="w-full h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>1 (Single Arm)</span>
+              <span>16 (Hypnotic Star)</span>
+            </div>
+          </div>
+
+          <!-- Decay Persistence Slider -->
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+              <span>Trail Persistence</span>
+              <span id="persistenceVal" class="text-pink-400 font-mono">Infinite</span>
+            </div>
+            <input
+              type="range"
+              id="persistence"
+              min="70"
+              max="100"
+              step="1"
+              value="100"
+              class="w-full h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-pink-500"
+            />
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>70% (Swift Fade)</span>
+              <span>100% (Permanent Ink)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stylus Brush configuration -->
+        <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl shadow-xl backdrop-blur-md space-y-4">
+          <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-800 pb-2">
+            <i data-lucide="palette" class="w-4 h-4 text-pink-400"></i> Stylus Brushes
+          </h3>
+
+          <!-- Drawing Style Segment -->
+          <div class="space-y-1.5">
+            <span class="text-xs font-semibold text-slate-400">Drawing Style</span>
+            <div class="grid grid-cols-2 bg-slate-950 rounded-lg p-1 border border-slate-800/85">
+              <button
+                id="paintModeLine"
+                class="py-1 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300"
+              >
+                Orbital Line
+              </button>
+              <button
+                id="paintModeDiameter"
+                class="py-1 text-xs font-semibold rounded-md transition-all bg-pink-600 text-white shadow"
+              >
+                Bilateral Radius
+              </button>
+            </div>
+          </div>
+
+          <!-- Color Dynamic Option Panel -->
+          <div class="space-y-1.5">
+            <span class="text-xs font-semibold text-slate-400">Pigment Dynamic</span>
+            <div class="grid grid-cols-3 bg-slate-950 rounded-lg p-1 border border-slate-800/85 text-[11px] font-medium text-center">
+              <button
+                id="colorModeRainbow"
+                class="py-1 rounded transition-all text-slate-500 hover:text-slate-300"
+              >
+                Rainbow
+              </button>
+              <button
+                id="colorModeGradient"
+                class="py-1 rounded transition-all bg-purple-600 text-white shadow"
+              >
+                Gradient
+              </button>
+              <button
+                id="colorModeStatic"
+                class="py-1 rounded transition-all text-slate-500 hover:text-slate-300"
+              >
+                Chroma
+              </button>
+            </div>
+          </div>
+
+          <!-- Random Modulation Toggler -->
+          <div class="flex items-center justify-between bg-slate-950/80 p-2 rounded-lg border border-slate-800/60">
+            <span class="text-xs text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-400"></i> Natural Line Modulation
+            </span>
+            <button
+              id="randomThicknessToggle"
+              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors bg-slate-700"
+            >
+              <span id="randomThicknessDot" class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform translate-x-1"></span>
+            </button>
+          </div>
+
+          <!-- Weight styling input -->
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1">
+              <span>Stylus Weight</span>
+              <span id="brushSizeVal" class="text-slate-300 font-mono">3px</span>
+            </div>
+            <input
+              type="range"
+              id="brushSize"
+              min="1"
+              max="12"
+              step="1"
+              value="3"
+              class="w-full h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+          </div>
+        </div>
+
+        <!-- Concentric layer stack controller -->
+        <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl shadow-xl backdrop-blur-md flex flex-col">
+          <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i> Circle Stack (<span id="layerCountText">3</span>)
+            </h3>
+            <button 
+              id="addLayerBtn"
+              class="flex items-center gap-1 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg transition-colors font-bold shadow-md shadow-indigo-600/10 border border-indigo-500/20"
+            >
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Layer
+            </button>
+          </div>
+          
+          <!-- Layer Config Cards Container -->
+          <div id="layersContainer" class="space-y-3 max-h-[310px] overflow-y-auto pr-1">
+            <!-- Rendered dynamically by JavaScript -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION 3: Quick Presets Selection Grid (Absolute Bottom) -->
+      <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl shadow-xl backdrop-blur-md">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2 mb-3 border-b border-slate-800 pb-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Choose Preset Matrix
+        </h3>
+        <div id="presetsContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <!-- Rendered dynamically by JavaScript -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Systems Logs -->
+    <div class="mt-8 mb-4 border-t border-slate-900 pt-4 text-center text-[11px] text-slate-600 w-full max-w-4xl px-4">
+      <p>Orbital Painting Studio Engine — Created utilizing continuous coordinate chains rendering on high-speed HTML5 canvasses.</p>
+    </div>
+
+  </div>
+
+  <script>
+    // App Constants and Default Configs
+    const DEFAULT_ARMS = [
+      { id: 1, radius: 90, length: 90, speed: 0.5, angle: 0, visible: true, color: 'hsl(190, 85%, 60%)' },
+      { id: 2, radius: 70, length: 70, speed: 1.5, angle: 0, visible: true, color: 'hsl(280, 85%, 65%)' },
+      { id: 3, radius: 45, length: 45, speed: -3.0, angle: 0, visible: true, color: 'hsl(340, 85%, 60%)' },
+    ];
+
+    const PRESETS = [
+      {
+        name: "Sacred Mandala",
+        description: "Multi-axis celestial geometry with deep harmonic ratios.",
+        symmetry: 8,
+        paintMode: "line",
+        colorMode: "gradient",
+        brushSize: 2,
+        persistence: 100,
+        arms: [
+          { id: 1, radius: 95, length: 95, speed: 0.4, angle: 0, visible: true, color: 'hsl(190, 85%, 60%)' },
+          { id: 2, radius: 65, length: 65, speed: -1.2, angle: 0, visible: true, color: 'hsl(280, 85%, 65%)' },
+          { id: 3, radius: 45, length: 45, speed: 2.8, angle: 0, visible: true, color: 'hsl(340, 85%, 60%)' },
+          { id: 4, radius: 25, length: 25, speed: -5.6, angle: 0, visible: true, color: 'hsl(40, 95%, 60%)' }
+        ]
+      },
+      {
+        name: "Symmetric Bloom",
+        description: "Flowering petals generated using high-speed outer orbits.",
+        symmetry: 6,
+        paintMode: "diameter",
+        colorMode: "rainbow",
+        brushSize: 3,
+        persistence: 100,
+        arms: [
+          { id: 1, radius: 110, length: 110, speed: 0.2, angle: 0, visible: true, color: 'hsl(200, 80%, 55%)' },
+          { id: 2, radius: 75, length: 75, speed: 2.0, angle: 0, visible: true, color: 'hsl(140, 80%, 55%)' },
+          { id: 3, radius: 40, length: 40, speed: -6.0, angle: 0, visible: true, color: 'hsl(300, 85%, 60%)' }
+        ]
+      },
+      {
+        name: "Neon Supernova",
+        description: "Stellar explosion trails featuring fading persistence.",
+        symmetry: 12,
+        paintMode: "diameter",
+        colorMode: "gradient",
+        brushSize: 4,
+        persistence: 90,
+        arms: [
+          { id: 1, radius: 120, length: 50, speed: 0.5, angle: 0, visible: true, color: 'hsl(180, 90%, 60%)' },
+          { id: 2, radius: 80, length: 80, speed: -3.5, angle: 0, visible: true, color: 'hsl(320, 95%, 60%)' },
+          { id: 3, radius: 50, length: 50, speed: 10.0, angle: 0, visible: true, color: 'hsl(55, 95%, 55%)' }
+        ]
+      },
+      {
+        name: "Lissajous Pulse",
+        description: "Classic kinetic harmonics showing interference waves.",
+        symmetry: 1,
+        paintMode: "line",
+        colorMode: "static",
+        brushSize: 2,
+        persistence: 100,
+        arms: [
+          { id: 1, radius: 110, length: 110, speed: 1.0, angle: 0, visible: true, color: 'hsl(220, 80%, 60%)' },
+          { id: 2, radius: 80, length: 80, speed: 1.5, angle: 0, visible: true, color: 'hsl(220, 70%, 50%)' },
+          { id: 3, radius: 50, length: 50, speed: -2.5, angle: 0, visible: true, color: 'hsl(220, 60%, 40%)' }
+        ]
+      },
+      {
+        name: "Chaotic Gravity",
+        description: "Complex chaotic system imitating orbits of stellar systems.",
+        symmetry: 2,
+        paintMode: "line",
+        colorMode: "gradient",
+        brushSize: 1,
+        persistence: 100,
+        arms: [
+          { id: 1, radius: 90, length: 90, speed: 0.7, angle: 0, visible: true, color: 'hsl(230, 85%, 60%)' },
+          { id: 2, radius: 75, length: 120, speed: -1.9, angle: 0, visible: true, color: 'hsl(290, 85%, 65%)' },
+          { id: 3, radius: 50, length: 20, speed: 5.1, angle: 0, visible: true, color: 'hsl(330, 85%, 60%)' },
+          { id: 4, radius: 30, length: 70, speed: -9.3, angle: 0, visible: true, color: 'hsl(15, 95%, 60%)' }
+        ]
+      },
+      {
+        name: "Ethereal Ring",
+        description: "Velvety ribbons tracing nested concentric path structures.",
+        symmetry: 4,
+        paintMode: "diameter",
+        colorMode: "rainbow",
+        brushSize: 1,
+        persistence: 95,
+        arms: [
+          { id: 1, radius: 130, length: 130, speed: 0.3, angle: 0, visible: true, color: 'hsl(170, 85%, 50%)' },
+          { id: 2, radius: 50, length: 30, speed: -8.0, angle: 0, visible: true, color: 'hsl(250, 85%, 60%)' }
+        ]
+      }
+    ];
+
+    // Core Global State
+    let state = {
+      arms: JSON.parse(JSON.stringify(DEFAULT_ARMS)),
+      isPlaying: true,
+      paintMode: 'diameter',
+      colorMode: 'gradient',
+      brushSize: 3,
+      useRandomThickness: false,
+      symmetry: 6,
+      simulationSpeed: 1.0,
+      persistence: 100,
+      zoom: 1.0, // Added Zoom factor tracking
+      selectedPreset: "Symmetric Bloom",
+      viewConfig: {
+        showTips: true,
+        showCircles: true,
+        showCenters: true,
+        showStructure: true
+      }
+    };
+
+    // Physics/Color loop tracking
+    let physicsArms = JSON.parse(JSON.stringify(state.arms));
+    let lastPoints = new Array(state.arms.length).fill(null);
+    let hueValue = 0;
+    let gradientState = {
+      startHue: 0,
+      targetHue: 180,
+      progress: 0,
+      speed: 0.003
+    };
+
+    // Keep track of the currently rendered PNG file link reference
+    let currentExportDataUrl = "";
+
+    // DOM Elements Cache
+    const trailCanvas = document.getElementById('trailCanvas');
+    const overlayCanvas = document.getElementById('overlayCanvas');
+    const trailCtx = trailCanvas.getContext('2d');
+    const overlayCtx = overlayCanvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    // Export Modal DOM Elements
+    const exportModal = document.getElementById('exportModal');
+    const exportImagePreview = document.getElementById('exportImagePreview');
+    const closeExportModal = document.getElementById('closeExportModal');
+    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+
+    // UI Input Bindings
+    const speedMultiplierInput = document.getElementById('speedMultiplier');
+    const symmetryInput = document.getElementById('symmetry');
+    const persistenceInput = document.getElementById('persistence');
+    const brushSizeInput = document.getElementById('brushSize');
+    const randomThicknessToggle = document.getElementById('randomThicknessToggle');
+    const randomThicknessDot = document.getElementById('randomThicknessDot');
+
+    // Labels Val Cache
+    const speedVal = document.getElementById('speedVal');
+    const symmetryVal = document.getElementById('symmetryVal');
+    const persistenceVal = document.getElementById('persistenceVal');
+    const brushSizeVal = document.getElementById('brushSizeVal');
+
+    // Initialize Layout & Canvas Bounds (With Resize Protection)
+    let dimensions = { width: 800, height: 520 };
+
+    function initDimensions() {
+      const oldWidth = trailCanvas.width;
+      const oldHeight = trailCanvas.height;
+
+      // Duplicate the current image trails prior to resizing
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = oldWidth;
+      tempCanvas.height = oldHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (oldWidth > 0 && oldHeight > 0) {
+        tempCtx.drawImage(trailCanvas, 0, 0);
+      }
+
+      dimensions.width = canvasContainer.offsetWidth;
+      trailCanvas.width = dimensions.width;
+      trailCanvas.height = dimensions.height;
+      overlayCanvas.width = dimensions.width;
+      overlayCanvas.height = dimensions.height;
+      
+      trailCtx.lineCap = 'round';
+      trailCtx.lineJoin = 'round';
+      overlayCtx.lineCap = 'round';
+      overlayCtx.lineJoin = 'round';
+
+      // Fill canvas background
+      trailCtx.fillStyle = '#0b0f19';
+      trailCtx.fillRect(0, 0, dimensions.width, dimensions.height);
+      
+      // Draw trails back to preserve user's artwork
+      if (oldWidth > 0 && oldHeight > 0) {
+        trailCtx.drawImage(tempCanvas, 0, 0);
+      }
+
+      lastPoints = new Array(state.arms.length).fill(null);
+    }
+
+    // Clear Trail Space - Relocated to the top of the file to guarantee hoisting availability
+    function clearCanvas() {
+      trailCtx.fillStyle = '#0b0f19';
+      trailCtx.fillRect(0, 0, dimensions.width, dimensions.height);
+      lastPoints = new Array(state.arms.length).fill(null);
+    }
+
+    // Trigger toast alerts dynamically
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'flex items-center gap-2 bg-slate-900 border border-indigo-500/40 px-4 py-2.5 rounded-full shadow-2xl text-xs sm:text-sm font-medium animate-bounce pointer-events-auto transition-opacity duration-300';
+      toast.innerHTML = `<i data-lucide="check-circle" class="text-emerald-400 w-4 h-4"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // Synchronize physical matrix parameters gracefully
+    function syncPhysicsState(fullReset = false) {
+      // Complete physical recreation of state segments (presets, resets, adding/deleting layers, or scrambling)
+      if (fullReset || state.arms.length !== lastPoints.length || !physicsArms || physicsArms.length !== state.arms.length) {
+        physicsArms = JSON.parse(JSON.stringify(state.arms));
+        lastPoints = new Array(state.arms.length).fill(null);
+        return;
+      }
+
+      // Live parameter mapping to keep active angles moving smoothly
+      physicsArms = physicsArms.map((pArm, idx) => {
+        const stateArm = state.arms[idx];
+        if (!stateArm) return pArm;
+        return {
+          ...pArm,
+          radius: stateArm.radius,
+          length: stateArm.length,
+          speed: stateArm.speed,
+          visible: stateArm.visible,
+          color: stateArm.color
+        };
+      });
+    }
+
+    // High fidelity CSS Viewport scaling engine
+    function updateZoom(newZoom) {
+      // Scale limits set to 25% (very far) up to 400% (extreme macro detail)
+      state.zoom = Math.max(0.25, Math.min(4.0, parseFloat(newZoom.toFixed(2))));
+      
+      // Update transforms
+      trailCanvas.style.transform = `scale(${state.zoom})`;
+      overlayCanvas.style.transform = `scale(${state.zoom})`;
+      
+      // Sync numerical display badge
+      document.getElementById('zoomVal').innerText = `${Math.round(state.zoom * 100)}%`;
+    }
+
+    // Fallback trigger mechanism to download local link files safely
+    function triggerDirectDownload(dataUrl) {
+      const link = document.createElement('a');
+      link.download = `orbital-art-${Date.now()}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // The Unified Kinetic Canvas Loop
+    let animationFrameId;
+    function loop() {
+      if (!state.isPlaying) return;
+
+      const dynamicCenterX = dimensions.width / 2;
+      const dynamicCenterY = dimensions.height / 2;
+
+      // 1. Trail Decay / Infinite Persistence fade
+      if (state.persistence < 100) {
+        const alpha = (100 - state.persistence) * 0.0035;
+        trailCtx.fillStyle = `rgba(11, 15, 25, ${alpha})`;
+        trailCtx.fillRect(0, 0, dimensions.width, dimensions.height);
+      }
+
+      // 2. Physics computation: rotate angles based on speed constants & global speed mult
+      physicsArms.forEach(arm => {
+        arm.angle = (arm.angle + arm.speed * state.simulationSpeed);
+      });
+
+      // 3. Coordinate chain calculation
+      let currentX = dynamicCenterX;
+      let currentY = dynamicCenterY;
+      const joints = [{ x: currentX, y: currentY }];
+
+      physicsArms.forEach(arm => {
+        const rad = (arm.angle * Math.PI) / 180;
+        currentX += arm.length * Math.cos(rad);
+        currentY += arm.length * Math.sin(rad);
+        joints.push({ x: currentX, y: currentY });
+      });
+
+      // 4. Color Update Cycles
+      if (state.colorMode === 'rainbow') {
+        hueValue = (hueValue + 0.5 * state.simulationSpeed) % 360;
+      } else if (state.colorMode === 'gradient') {
+        gradientState.progress += gradientState.speed * state.simulationSpeed;
+        hueValue = gradientState.startHue + (gradientState.targetHue - gradientState.startHue) * gradientState.progress;
+
+        if (gradientState.progress >= 1) {
+          gradientState.progress = 0;
+          gradientState.startHue = gradientState.targetHue;
+          let nextHue = Math.random() * 360;
+          if (Math.abs(nextHue - gradientState.startHue) < 60) {
+            nextHue = (nextHue + 180) % 360;
+          }
+          gradientState.targetHue = nextHue;
+        }
+      } else {
+        hueValue = 220; // Static Blue Chroma
+      }
+
+      // 5. Symmetric Trail Rendering
+      const currentTips = [];
+
+      physicsArms.forEach((arm, idx) => {
+        const centerPoint = joints[idx];
+        const tipPoint = joints[idx + 1];
+        currentTips.push(tipPoint);
+
+        if (!arm.visible) return;
+
+        // Establish brush stroke color
+        let strokeColor;
+        if (state.colorMode === 'static') {
+          strokeColor = `hsl(220, ${85 - (idx * 6)}%, ${60 + (idx * 4)}%)`;
+        } else {
+          const armHue = (hueValue + (idx * 22)) % 360;
+          strokeColor = `hsl(${armHue}, 90%, 60%)`;
+        }
+
+        // Determine weight sizing
+        let thickness = state.brushSize;
+        if (state.useRandomThickness) {
+          thickness = Math.max(0.5, Math.random() * (state.brushSize * 1.6));
+        }
+
+        // Symmetrical axes cycle
+        for (let s = 0; s < state.symmetry; s++) {
+          const rotationAngle = (s * 2 * Math.PI) / state.symmetry;
+
+          const rotatePoint = (pt) => {
+            const dx = pt.x - dynamicCenterX;
+            const dy = pt.y - dynamicCenterY;
+            const rx = dx * Math.cos(rotationAngle) - dy * Math.sin(rotationAngle) + dynamicCenterX;
+            const ry = dx * Math.sin(rotationAngle) + dy * Math.cos(rotationAngle) + dynamicCenterY;
+            return { x: rx, y: ry };
+          };
+
+          const symTip = rotatePoint(tipPoint);
+
+          if (state.paintMode === 'diameter') {
+            // Diameter: Opposite line passing through concentric joints
+            const oppositePoint = {
+              x: centerPoint.x - (tipPoint.x - centerPoint.x),
+              y: centerPoint.y - (tipPoint.y - centerPoint.y)
+            };
+            const symOpposite = rotatePoint(oppositePoint);
+
+            trailCtx.beginPath();
+            trailCtx.moveTo(symTip.x, symTip.y);
+            trailCtx.lineTo(symOpposite.x, symOpposite.y);
+            
+            trailCtx.strokeStyle = strokeColor;
+            trailCtx.globalAlpha = 0.16;
+            trailCtx.lineWidth = thickness;
+            trailCtx.stroke();
+            trailCtx.globalAlpha = 1.0;
+          } else {
+            // Line: Sequential frame rendering
+            const lastPoint = lastPoints[idx];
+            if (lastPoint) {
+              const symLast = rotatePoint(lastPoint);
+
+              trailCtx.beginPath();
+              trailCtx.moveTo(symLast.x, symLast.y);
+              trailCtx.lineTo(symTip.x, symTip.y);
+
+              trailCtx.strokeStyle = strokeColor;
+              trailCtx.lineWidth = thickness;
+              trailCtx.stroke();
+            }
+          }
+        }
+      });
+
+      lastPoints = currentTips;
+
+      // 6. Draw Overlay Interface Metrics
+      overlayCtx.clearRect(0, 0, dimensions.width, dimensions.height);
+
+      // Draw active stacking limbs
+      physicsArms.forEach((arm, idx) => {
+        const joint = joints[idx];
+        const nextJoint = joints[idx + 1];
+
+        // Concentric Orbit Circles
+        if (state.viewConfig.showCircles) {
+          overlayCtx.beginPath();
+          overlayCtx.arc(joint.x, joint.y, arm.radius, 0, Math.PI * 2);
+          overlayCtx.strokeStyle = arm.visible ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
+          overlayCtx.lineWidth = 1;
+          overlayCtx.stroke();
+        }
+
+        // Structural Limbs
+        if (state.viewConfig.showStructure) {
+          overlayCtx.beginPath();
+          overlayCtx.moveTo(joint.x, joint.y);
+          overlayCtx.lineTo(nextJoint.x, nextJoint.y);
+          overlayCtx.strokeStyle = arm.visible ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.1)';
+          overlayCtx.lineWidth = 1.5;
+          overlayCtx.stroke();
+        }
+
+        // Joint Center Hubs
+        if (state.viewConfig.showCenters) {
+          overlayCtx.beginPath();
+          overlayCtx.arc(joint.x, joint.y, 3.5, 0, Math.PI * 2);
+          overlayCtx.fillStyle = arm.color || '#60A5FA';
+          overlayCtx.fill();
+        }
+
+        // Concentric Brushes (Tips)
+        if (state.viewConfig.showTips) {
+          overlayCtx.beginPath();
+          overlayCtx.arc(nextJoint.x, nextJoint.y, 4.5, 0, Math.PI * 2);
+          overlayCtx.fillStyle = '#FFFFFF';
+          overlayCtx.fill();
+
+          overlayCtx.shadowBlur = 8;
+          overlayCtx.shadowColor = arm.color || 'white';
+          overlayCtx.stroke();
+          overlayCtx.shadowBlur = 0;
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(loop);
+    }
+
+    // Dynamic Layer HTML Generation & Stacking Control
+    function renderLayers() {
+      const container = document.getElementById('layersContainer');
+      container.innerHTML = '';
+      document.getElementById('layerCountText').innerText = state.arms.length;
+
+      state.arms.forEach((arm, idx) => {
+        const layerCard = document.createElement('div');
+        layerCard.className = `p-3 rounded-lg border transition-all ${
+          arm.visible 
+          ? 'bg-slate-950 border-slate-800/80 shadow-inner' 
+          : 'bg-slate-950/45 border-slate-900/50 opacity-60'
+        }`;
+
+        layerCard.innerHTML = `
+          <!-- Header details -->
+          <div class="flex justify-between items-center mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-3.5 rounded-full" style="background-color: ${arm.color}"></span>
+              <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Layer ${idx + 1}</span>
+              <button onclick="toggleLayerVisibility(${idx})" class="text-slate-500 hover:text-slate-200 transition-colors" title="${arm.visible ? 'Mute' : 'Show'} layer">
+                <i data-lucide="${arm.visible ? 'eye' : 'eye-off'}" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            ${state.arms.length > 1 ? `
+              <button onclick="removeLayer(${idx})" class="text-slate-600 hover:text-rose-400 transition-colors p-0.5" title="Delete Layer">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Controls panel inputs -->
+          <div class="space-y-2">
+            <!-- Radius slider -->
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="circle" class="w-2.5 h-2.5"></i> Draw Radius</span>
+                <span id="val-radius-${idx}" class="font-mono text-slate-300">${arm.radius}</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="140"
+                value="${arm.radius}"
+                oninput="updateLayerParam(${idx}, 'radius', this.value)"
+                class="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+              />
+            </div>
+
+            <!-- Pivot Length Slider -->
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="ruler" class="w-2.5 h-2.5"></i> Pivot Distance</span>
+                <span id="val-length-${idx}" class="font-mono text-slate-300">${arm.length}</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="140"
+                value="${arm.length}"
+                oninput="updateLayerParam(${idx}, 'length', this.value)"
+                class="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-teal-400"
+              />
+            </div>
+
+            <!-- Speed Const -->
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-500">
+                <span>Speed Constant</span>
+                <span id="val-speed-${idx}" class="font-mono text-slate-300">${arm.speed > 0 ? '+' + arm.speed : arm.speed}</span>
+              </div>
+              <input
+                type="range"
+                min="-12"
+                max="12"
+                step="0.1"
+                value="${arm.speed}"
+                oninput="updateLayerParam(${idx}, 'speed', this.value)"
+                class="w-full h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-pink-500"
+              />
+            </div>
+          </div>
+        `;
+        container.appendChild(layerCard);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Dynamic Presets Render at the bottom
+    function renderPresets() {
+      const container = document.getElementById('presetsContainer');
+      container.innerHTML = '';
+
+      PRESETS.forEach((p, idx) => {
+        const btn = document.createElement('button');
+        const isActive = state.selectedPreset === p.name;
+        btn.className = `w-full text-left p-3 rounded-lg border transition-all duration-200 flex flex-col justify-between h-full ${
+          isActive 
+          ? 'bg-gradient-to-r from-indigo-900/40 to-slate-800 border-indigo-500/60 shadow-md text-white' 
+          : 'bg-slate-950/40 border-slate-800/80 hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
+        }`;
+        btn.innerHTML = `
+          <div class="w-full">
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-semibold text-xs truncate">${p.name}</span>
+              <span class="text-[9px] bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded-full border border-indigo-500/10 font-mono shrink-0">
+                ${p.arms.length} Layers
+              </span>
+            </div>
+            <p class="text-[10px] opacity-70 mt-1 leading-tight line-clamp-2">${p.description}</p>
+          </div>
+        `;
+        btn.onclick = () => applyPreset(idx);
+        container.appendChild(btn);
+      });
+    }
+
+    // Dynamic Preset Application
+    function applyPreset(index) {
+      const p = PRESETS[index];
+      state.selectedPreset = p.name;
+      state.symmetry = p.symmetry;
+      state.paintMode = p.paintMode;
+      state.colorMode = p.colorMode;
+      state.brushSize = p.brushSize;
+      state.persistence = p.persistence;
+
+      const presetColors = ['#22d3ee', '#c084fc', '#f43f5e', '#fbbf24', '#34d399', '#60a5fa'];
+      state.arms = p.arms.map((arm, i) => ({
+        ...arm,
+        color: arm.color || presetColors[i % presetColors.length]
+      }));
+
+      // Update Slider Elements
+      symmetryInput.value = p.symmetry;
+      persistenceInput.value = p.persistence;
+      brushSizeInput.value = p.brushSize;
+
+      // Sync toggles and styles UI
+      syncSymmetryValue();
+      syncPersistenceValue();
+      syncBrushValue();
+      syncPaintStylesUI();
+      syncColorStylesUI();
+
+      clearCanvas();
+      syncPhysicsState(true);
+      renderLayers();
+      renderPresets();
+      
+      // Force engine play
+      if (!state.isPlaying) {
+        state.isPlaying = true;
+        document.getElementById('playPauseText').innerText = "Pause Engine";
+        document.getElementById('playPauseBtn').className = "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md bg-amber-600 hover:bg-amber-500 text-white";
+        loop();
+      }
+
+      showToast("Loaded Preset!");
+    }
+
+    // Smooth inline slider changes without dropping focal pointer drag
+    window.updateLayerParam = function(idx, field, val) {
+      state.selectedPreset = "Custom";
+      const parsedVal = parseFloat(val);
+      state.arms[idx][field] = parsedVal;
+      syncPhysicsState();
+      
+      const label = document.getElementById(`val-${field}-${idx}`);
+      if (label) {
+        label.innerText = field === 'speed' && parsedVal > 0 ? `+${parsedVal}` : parsedVal;
+      }
+      renderPresets();
+    };
+
+    window.toggleLayerVisibility = function(idx) {
+      state.arms[idx].visible = !state.arms[idx].visible;
+      syncPhysicsState();
+      renderLayers();
+    };
+
+    window.removeLayer = function(idx) {
+      if (state.arms.length <= 1) return;
+      state.arms.splice(idx, 1);
+      state.selectedPreset = "Custom";
+      clearCanvas();
+      syncPhysicsState(true);
+      renderLayers();
+      renderPresets();
+    };
+
+    // Stacking additional vectors to matrix
+    document.getElementById('addLayerBtn').onclick = function() {
+      if (state.arms.length >= 8) {
+        showToast("Stack capacity reached (max 8 layers)");
+        return;
+      }
+      const layerColors = ['#f43f5e', '#34d399', '#fbbf24', '#60a5fa', '#a78bfa', '#22d3ee'];
+      const r = Math.max(20, 60 - state.arms.length * 5);
+      state.arms.push({
+        id: Date.now(),
+        radius: r,
+        length: r,
+        speed: (state.arms.length % 2 === 0 ? 1.8 : -1.8),
+        angle: 0,
+        visible: true,
+        color: layerColors[state.arms.length % layerColors.length]
+      });
+      state.selectedPreset = "Custom";
+      syncPhysicsState(true);
+      renderLayers();
+      renderPresets();
+      showToast("Added concentric drawing layer");
+    };
+
+    // Factory Settings Restore
+    document.getElementById('factoryResetBtn').onclick = function() {
+      state.arms = JSON.parse(JSON.stringify(DEFAULT_ARMS));
+      state.paintMode = 'line';
+      state.colorMode = 'gradient';
+      state.brushSize = 2;
+      state.useRandomThickness = false;
+      state.symmetry = 1;
+      state.simulationSpeed = 1.0;
+      state.persistence = 100;
+      state.selectedPreset = "Custom";
+      
+      // Sync GUI Elements
+      speedMultiplierInput.value = 1.0;
+      symmetryInput.value = 1;
+      persistenceInput.value = 100;
+      brushSizeInput.value = 2;
+
+      syncSpeedValue();
+      syncSymmetryValue();
+      syncPersistenceValue();
+      syncBrushValue();
+      syncThicknessToggleUI();
+      syncPaintStylesUI();
+      syncColorStylesUI();
+      updateZoom(1.0); // Reset zoom on factory reset
+
+      clearCanvas();
+      syncPhysicsState(true);
+      renderLayers();
+      renderPresets();
+
+      if (!state.isPlaying) {
+        state.isPlaying = true;
+        document.getElementById('playPauseText').innerText = "Pause Engine";
+        document.getElementById('playPauseBtn').className = "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md bg-amber-600 hover:bg-amber-500 text-white";
+        loop();
+      }
+
+      showToast("Reset to pristine defaults");
+    };
+
+    // Scramble values randomization (Completely Fixed without scramble toast popup)
+    document.getElementById('scrambleBtn').onclick = function() {
+      const count = Math.floor(Math.random() * 4) + 2;
+      const randomColors = [
+        'hsl(190, 85%, 60%)', 'hsl(280, 85%, 65%)', 'hsl(340, 85%, 60%)',
+        'hsl(40, 95%, 60%)', 'hsl(150, 80%, 55%)', 'hsl(210, 90%, 60%)',
+        'hsl(310, 90%, 65%)', 'hsl(80, 85%, 55%)'
+      ];
+
+      state.arms = Array.from({ length: count }).map((_, i) => {
+        const r = Math.floor(Math.random() * 65) + 25;
+        const l = Math.random() > 0.4 ? r : Math.floor(Math.random() * 90) + 15;
+        return {
+          id: Date.now() + i,
+          radius: r,
+          length: l,
+          speed: parseFloat((Math.random() * 7 - 3.5).toFixed(1)) || 0.8,
+          angle: 0,
+          visible: true,
+          color: randomColors[i % randomColors.length]
+        };
+      });
+
+      state.symmetry = Math.random() > 0.3 ? [2, 3, 4, 5, 6, 8, 10, 12][Math.floor(Math.random() * 8)] : 1;
+      symmetryInput.value = state.symmetry;
+      syncSymmetryValue();
+
+      state.selectedPreset = "Custom";
+      clearCanvas(); // Securely hoisted to the top, eliminating "not defined" errors completely!
+      syncPhysicsState(true); // Forced hard reset is called to update active physical color arrays
+      renderLayers();
+      renderPresets();
+    };
+
+    // Export Canvas Image as PNG (Fully optimized to support all iOS, Android, and standalone in-app browsers)
+    document.getElementById('downloadBtn').onclick = function() {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = dimensions.width;
+      exportCanvas.height = dimensions.height;
+      const expCtx = exportCanvas.getContext('2d');
+      
+      // Draw trails
+      expCtx.drawImage(trailCanvas, 0, 0);
+      
+      // Watermark Stamp Signature
+      expCtx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      expCtx.font = '11px sans-serif';
+      expCtx.fillText('Orbital Painting Studio — Made by Calvin Chak', 20, dimensions.height - 20);
+      
+      const dataUrl = exportCanvas.toDataURL('image/png');
+      currentExportDataUrl = dataUrl;
+
+      // Populate preview image inside the fallback save modal
+      exportImagePreview.src = dataUrl;
+
+      // Make export overlay modal visible
+      exportModal.classList.remove('hidden');
+      lucide.createIcons();
+
+      // Attempt standard programmatic anchor download as primary trigger
+      try {
+        triggerDirectDownload(dataUrl);
+        showToast("Export process started successfully!");
+      } catch (err) {
+        console.warn("Direct programmatic trigger restricted by browser/WebView sandboxing structure:", err);
+      }
+    };
+
+    // Modal manual close action binding
+    document.getElementById('closeExportModal').onclick = function() {
+      exportModal.classList.add('hidden');
+    };
+
+    // Close fallback save modal when clicking dark blurred background
+    exportModal.onclick = function(e) {
+      if (e.target === exportModal) {
+        exportModal.classList.add('hidden');
+      }
+    };
+
+    // Fallback retry button in modal
+    modalDownloadBtn.onclick = function() {
+      if (currentExportDataUrl) {
+        try {
+          triggerDirectDownload(currentExportDataUrl);
+        } catch (err) {
+          showToast("Standard download blocked. Please use the Press and Hold gesture.");
+        }
+      }
+    };
+
+    // View Options overlays control
+    function initOverlayToggles() {
+      const btnMap = {
+        'toggleTips': 'showTips',
+        'toggleStructure': 'showStructure',
+        'toggleCircles': 'showCircles',
+        'toggleCenters': 'showCenters'
+      };
+
+      Object.entries(btnMap).forEach(([elId, configKey]) => {
+        const btn = document.getElementById(elId);
+        btn.onclick = () => {
+          state.viewConfig[configKey] = !state.viewConfig[configKey];
+          btn.className = `flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-semibold tracking-wider uppercase border transition-all ${
+            state.viewConfig[configKey]
+            ? 'bg-slate-900 border-indigo-500/40 text-indigo-300'
+            : 'bg-slate-950 border-slate-800/80 text-slate-500'
+          }`;
+        };
+      });
+    }
+
+    // Stylus brush parameters updates
+    brushSizeInput.oninput = function() {
+      state.brushSize = parseInt(this.value);
+      brushSizeVal.innerText = `${state.brushSize}px`;
+    };
+
+    function syncBrushValue() {
+      brushSizeVal.innerText = `${state.brushSize}px`;
+    }
+
+    // Toggle Paint Style Line vs Diameter
+    const styleLineBtn = document.getElementById('paintModeLine');
+    const styleDiameterBtn = document.getElementById('paintModeDiameter');
+
+    function syncPaintStylesUI() {
+      if (state.paintMode === 'line') {
+        styleLineBtn.className = "py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
+        styleDiameterBtn.className = "py-1 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300";
+      } else {
+        styleLineBtn.className = "py-1 text-xs font-semibold rounded-md transition-all text-slate-500 hover:text-slate-300";
+        styleDiameterBtn.className = "py-1 text-xs font-semibold rounded-md transition-all bg-pink-600 text-white shadow";
+      }
+    }
+
+    styleLineBtn.onclick = () => {
+      state.paintMode = 'line';
+      syncPaintStylesUI();
+    };
+    styleDiameterBtn.onclick = () => {
+      state.paintMode = 'diameter';
+      syncPaintStylesUI();
+    };
+
+    // Toggle Pigment Color Styles
+    const rColorsBtn = document.getElementById('colorModeRainbow');
+    const gColorsBtn = document.getElementById('colorModeGradient');
+    const sColorsBtn = document.getElementById('colorModeStatic');
+
+    function syncColorStylesUI() {
+      [rColorsBtn, gColorsBtn, sColorsBtn].forEach(btn => {
+        btn.className = "py-1 rounded transition-all text-slate-500 hover:text-slate-300";
+      });
+      if (state.colorMode === 'rainbow') {
+        rColorsBtn.className = "py-1 rounded transition-all bg-indigo-600 text-white shadow";
+      } else if (state.colorMode === 'gradient') {
+        gColorsBtn.className = "py-1 rounded transition-all bg-purple-600 text-white shadow";
+      } else {
+        sColorsBtn.className = "py-1 rounded transition-all bg-blue-600 text-white shadow";
+      }
+    }
+
+    rColorsBtn.onclick = () => {
+      state.colorMode = 'rainbow';
+      syncColorStylesUI();
+    };
+    gColorsBtn.onclick = () => {
+      state.colorMode = 'gradient';
+      syncColorStylesUI();
+    };
+    sColorsBtn.onclick = () => {
+      state.colorMode = 'static';
+      syncColorStylesUI();
+    };
+
+    // Natural Thickness Toggles
+    function syncThicknessToggleUI() {
+      if (state.useRandomThickness) {
+        randomThicknessToggle.className = "relative inline-flex h-5 w-9 items-center rounded-full transition-colors bg-indigo-500";
+        randomThicknessDot.className = "inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform translate-x-4";
+      } else {
+        randomThicknessToggle.className = "relative inline-flex h-5 w-9 items-center rounded-full transition-colors bg-slate-700";
+        randomThicknessDot.className = "inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform translate-x-1";
+      }
+    }
+
+    randomThicknessToggle.onclick = () => {
+      state.useRandomThickness = !state.useRandomThickness;
+      syncThicknessToggleUI();
+    };
+
+    // Speed constants updater
+    speedMultiplierInput.oninput = function() {
+      state.simulationSpeed = parseFloat(this.value);
+      syncSpeedValue();
+    };
+
+    function syncSpeedValue() {
+      speedVal.innerText = `${state.simulationSpeed}x`;
+    }
+
+    // Symmetry Axes parameters
+    symmetryInput.oninput = function() {
+      state.symmetry = parseInt(this.value);
+      syncSymmetryValue();
+    };
+
+    function syncSymmetryValue() {
+      symmetryVal.innerText = `${state.symmetry} Axes`;
+    }
+
+    // Persistence Decay updates
+    persistenceInput.oninput = function() {
+      state.persistence = parseInt(this.value);
+      syncPersistenceValue();
+    };
+
+    function syncPersistenceValue() {
+      persistenceVal.innerText = state.persistence === 100 ? 'Infinite' : `${state.persistence}%`;
+    }
+
+    // Play Pause mechanics
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    playPauseBtn.onclick = function() {
+      state.isPlaying = !state.isPlaying;
+      if (state.isPlaying) {
+        document.getElementById('playPauseText').innerText = "Pause Engine";
+        playPauseBtn.className = "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md bg-amber-600 hover:bg-amber-500 text-white";
+        loop();
+      } else {
+        document.getElementById('playPauseText').innerText = "Start Physics";
+        playPauseBtn.className = "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md bg-emerald-600 hover:bg-emerald-500 text-white";
+      }
+      lucide.createIcons();
+    };
+
+    // Bind event listeners for Zoom buttons
+    document.getElementById('zoomInBtn').onclick = () => {
+      updateZoom(state.zoom + 0.25);
+    };
+    document.getElementById('zoomOutBtn').onclick = () => {
+      updateZoom(state.zoom - 0.25);
+    };
+    document.getElementById('zoomResetBtn').onclick = () => {
+      updateZoom(1.0);
+    };
+
+    // Keep layouts dynamic on viewport shifts (Resizing keeps existing trails)
+    window.addEventListener('resize', () => {
+      initDimensions();
+    });
+
+    // Application Initialization
+    window.onload = function() {
+      initDimensions();
+      initOverlayToggles();
+      
+      // Bind the manual clean button explicitly
+      document.getElementById('clearCanvasBtn').onclick = clearCanvas;
+
+      // Seed UI States
+      syncSpeedValue();
+      syncSymmetryValue();
+      syncPersistenceValue();
+      syncBrushValue();
+      syncPaintStylesUI();
+      syncColorStylesUI();
+      syncThicknessToggleUI();
+      updateZoom(1.0); // Initialize scale factor
+
+      renderLayers();
+      renderPresets();
+      
+      // Start Simulation Engine
+      loop();
+    };
+  </script>
+</body>
+</html>
