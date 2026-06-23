@@ -5,3 +5,9 @@ This repo is for the free creative tools I created for creating math art.
 
 # Kaleidoscope Studio
 By capturing perfectly balanced reflections across multiple axes, simple mouse/touch movements transform into highly intricate, glowing symmetries. 
+
+# Sacred Geometry Studio
+Explore ancient sacred geometry through radial circular loops, and watch digital mandala emerge in seconds.
+
+# Orbital Painting Studio
+Simulate compound orbital physics, configure concentric rotating matrices, and generate spectacular symmetric mandalas.
