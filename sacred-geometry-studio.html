@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sacred Geometry Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030305;
+            color: #f1f5f9;
+            touch-action: none; /* Prevents default double-tap zooming on mobile */
+        }
+        .code-font {
+            font-family: 'Space Mono', monospace;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #06060c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #181829;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(8, 8, 14, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        /* Custom styled range input */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #141420;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.7);
+            transition: transform 0.1s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="overflow-hidden h-screen flex flex-col select-none">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
+
+    <!-- Export Image Preview Modal (Touch-friendly save targets for mobile) -->
+    <div id="exportModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4">
+        <div class="bg-slate-950 border border-slate-900 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+            <button onclick="closeExportModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+            <div class="text-center space-y-1">
+                <h3 class="text-sm font-bold text-slate-200">Mandala Export Ready</h3>
+                <p class="text-[10px] text-slate-400">On mobile devices, tap &amp; hold the image to Save or Share. On desktops, use the button below.</p>
+            </div>
+            <div class="flex justify-center bg-[#05050c] rounded-xl overflow-hidden border border-slate-900 p-2 max-h-[50vh]">
+                <img id="exportedImage" class="max-w-full max-h-[45vh] object-contain rounded-lg shadow-lg" alt="Sacred Geometry Artwork">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeExportModal()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-900 transition-colors">
+                    Close
+                </button>
+                <a id="modalDownloadBtn" href="#" download="sacred_geometry_studio.png" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md transition-colors">
+                    <i class="fa-solid fa-download"></i> Download PNG
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="glass-panel border-b border-slate-900 px-4 py-2.5 flex items-center justify-between z-30 shrink-0">
+        <a href="https://www.instagram.com/calvin_chak_art" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md">
+                <i class="fa-solid fa-shapes text-white text-[11px] animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xs tracking-wide bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                    Sacred Geometry Studio
+                </h1>
+                <p class="text-[9px] text-slate-500">Made by Calvin Chak (IG @calvin_chak_art)</p>
+            </div>
+        </a>
+
+        <!-- Desktop Presets Menu bar -->
+        <div class="hidden lg:flex items-center gap-2">
+            <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Presets:</span>
+            <div class="flex bg-slate-950 rounded-lg p-0.5 border border-slate-900">
+                <button onclick="loadPreset('flowerOfLife')" class="px-2 py-0.5 text-[10px] font-medium rounded text-slate-400 hover:text-white transition-colors">Flower of Life</button>
+                <button onclick="loadPreset('metatronsCube')" class="px-2 py-0.5 text-[10px] font-medium rounded text-slate-400 hover:text-white transition-colors">Metatron</button>
+                <button onclick="loadPreset('torus')" class="px-2 py-0.5 text-[10px] font-medium rounded text-slate-400 hover:text-white transition-colors">Torus Field</button>
+                <button onclick="loadPreset('cosmicBreath')" class="px-2 py-0.5 text-[10px] font-medium rounded text-slate-400 hover:text-white transition-colors">Pulsation</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Area: Responsive Row/Col setup -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- WORKSPACE PORTION 1: Canvas viewport at top (2/3 height) on mobile, center on desktop -->
+        <main class="flex-none h-[66.67vh] lg:flex-1 lg:h-full bg-[#030306] relative overflow-hidden flex flex-col items-center justify-center border-b lg:border-b-0 border-slate-900 order-1 lg:order-none">
+            <!-- Render Board Canvas -->
+            <canvas id="mandalaCanvas" class="cursor-grab active:cursor-grabbing max-w-full max-h-full transition-transform duration-100 ease-out"></canvas>
+
+            <!-- Playback & Camera Controls floating bar -->
+            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 glass-panel p-1.5 rounded-xl flex items-center justify-center gap-1.5 max-w-[95%] shadow-xl z-20">
+                <div class="flex items-center gap-1">
+                    <button onclick="togglePlayback()" id="btn-play" class="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all focus:outline-none" title="Play/Pause Animation (Spacebar)">
+                        <i class="fa-solid fa-pause text-[10px]"></i>
+                    </button>
+                    <button onclick="resetTimeline()" class="w-8 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 flex items-center justify-center transition-all border border-slate-900" title="Reset Timeline Animation">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                    </button>
+                </div>
+
+                <div class="h-5 w-px bg-slate-900"></div>
+
+                <div class="flex items-center gap-1">
+                    <button onclick="adjustZoom(1.15)" class="w-8 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 flex items-center justify-center transition-all border border-slate-900" title="Zoom In">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                    </button>
+                    <button onclick="adjustZoom(0.85)" class="w-8 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 flex items-center justify-center transition-all border border-slate-900" title="Zoom Out">
+                        <i class="fa-solid fa-minus text-[10px]"></i>
+                    </button>
+                    <button onclick="resetCamera()" class="w-8 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 flex items-center justify-center transition-all text-[10px] font-semibold code-font border border-slate-900" title="Reset Viewport">
+                        1:1
+                    </button>
+                </div>
+
+                <div class="h-5 w-px bg-slate-900"></div>
+
+                <!-- Presets dropdown toggle for mobile -->
+                <button onclick="togglePresetsSheet()" class="lg:hidden px-2.5 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 text-[10px] font-bold border border-slate-900 flex items-center gap-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400 text-[9px]"></i> Presets
+                </button>
+
+                <div class="h-5 w-px bg-slate-900 lg:hidden"></div>
+
+                <!-- Exporters -->
+                <div class="flex items-center gap-1">
+                    <button onclick="exportPNG()" class="px-2.5 h-8 rounded-lg bg-slate-950 hover:bg-slate-900 text-slate-400 text-[10px] font-bold border border-slate-900 flex items-center gap-1" title="Export Wallpaper PNG">
+                        <i class="fa-solid fa-image text-[9px] text-emerald-400"></i> Export PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Presets Overlay selection panel -->
+            <div id="mobilePresetsSheet" class="absolute bottom-16 left-1/2 -translate-x-1/2 glass-panel p-2.5 rounded-xl w-[90%] max-w-sm hidden z-20 flex-col gap-1.5">
+                <div class="flex justify-between items-center pb-1.5 border-b border-slate-900 mb-0.5">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Presets</span>
+                    <button onclick="togglePresetsSheet()" class="text-slate-500 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="loadPreset('flowerOfLife'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Flower of Life</button>
+                    <button onclick="loadPreset('metatronsCube'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Metatron</button>
+                    <button onclick="loadPreset('torus'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Torus Field</button>
+                    <button onclick="loadPreset('cosmicBreath'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Pulsation</button>
+                    <button onclick="loadPreset('recursiveLattice'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Recursive</button>
+                    <button onclick="loadPreset('hypnoticVortex'); togglePresetsSheet()" class="p-1.5 rounded bg-slate-950 text-slate-300 text-[10px] font-semibold text-left border border-slate-900">Vortex</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- WORKSPACE PORTION 2: Sidebar (Bottom 1/3 on mobile, static left-panel on desktop) -->
+        <aside id="leftDesignerDrawer" class="flex-1 h-[33.33vh] lg:h-full lg:w-[330px] bg-slate-950 lg:border-r border-slate-900 flex flex-col z-10 shrink-0 order-2 lg:order-none overflow-hidden">
+            <!-- Tabs Menu -->
+            <div class="flex border-b border-slate-900 bg-slate-950 shrink-0">
+                <button onclick="switchSidebarTab('layers')" id="tabBtn-layers" class="flex-1 py-2.5 text-[11px] font-bold text-center border-b-2 border-blue-500 text-blue-400 bg-slate-900/10">
+                    <i class="fa-solid fa-layer-group mr-1"></i> Layers
+                </button>
+                <button onclick="switchSidebarTab('parameters')" id="tabBtn-parameters" class="flex-1 py-2.5 text-[11px] font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-sliders mr-1"></i> Params
+                </button>
+                <button onclick="switchSidebarTab('styling')" id="tabBtn-styling" class="flex-1 py-2.5 text-[11px] font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-palette mr-1"></i> Style
+                </button>
+                <!-- Guide tab exclusively visible on mobile to substitute right sidebar -->
+                <button onclick="switchSidebarTab('guide')" id="tabBtn-guide" class="lg:hidden flex-1 py-2.5 text-[11px] font-bold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> Guide
+                </button>
+            </div>
+
+            <!-- TAB 1: Layer list configuration -->
+            <div id="tabContent-layers" class="flex-1 flex flex-col overflow-y-auto p-3.5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Geometry</h3>
+                    <button onclick="addNewLayer()" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-plus text-[8px]"></i> Add Layer
+                    </button>
+                </div>
+
+                <div id="layerListContainer" class="space-y-2 overflow-y-auto">
+                    <!-- Layer elements loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- TAB 2: Shape & Math controls -->
+            <div id="tabContent-parameters" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+                <div class="flex items-center justify-between">
+                    <h4 id="activeLayerTitle" class="text-[11px] font-bold text-blue-400 uppercase tracking-wider truncate mr-2">Active Layer</h4>
+                    <span id="activeLayerBadge" class="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-300 font-medium code-font">L-1</span>
+                </div>
+
+                <!-- Shape Selection -->
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Shape Type</label>
+                    <select id="param-shapeType" onchange="updateActiveLayerParam('shapeType', this.value)" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200 outline-none focus:border-blue-500">
+                        <option value="circle">Concentric Circles</option>
+                        <option value="polygon">Symmetric Polygon</option>
+                        <option value="star">Radiating Star</option>
+                        <option value="connected_lines">Vector Cord Lines (String-art)</option>
+                        <option value="flower_of_life">Overlapping Circles (Flower Lenses)</option>
+                    </select>
+                </div>
+
+                <!-- Symmetry divisions -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Symmetry (Points)</span>
+                        <span id="val-symmetry" class="text-blue-400 code-font">6</span>
+                    </div>
+                    <input type="range" id="param-symmetry" min="2" max="64" step="1" oninput="updateActiveLayerParam('symmetry', parseInt(this.value))">
+                </div>
+
+                <!-- Base Radius -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Base Radius</span>
+                        <span id="val-radius" class="text-blue-400 code-font">120px</span>
+                    </div>
+                    <input type="range" id="param-radius" min="10" max="300" step="1" oninput="updateActiveLayerParam('radius', parseInt(this.value))">
+                </div>
+
+                <!-- Inner Ratio for Stars -->
+                <div id="param-group-star" class="space-y-1 hidden">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Inner Radius Ratio</span>
+                        <span id="val-innerRadiusRatio" class="text-blue-400 code-font">0.5</span>
+                    </div>
+                    <input type="range" id="param-innerRadiusRatio" min="0.1" max="0.9" step="0.01" oninput="updateActiveLayerParam('innerRadiusRatio', parseFloat(this.value))">
+                </div>
+
+                <!-- Step value for cord lines -->
+                <div id="param-group-connected" class="space-y-1 hidden">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Multiplier Step</span>
+                        <span id="val-lineStep" class="text-blue-400 code-font">2</span>
+                    </div>
+                    <input type="range" id="param-lineStep" min="1" max="32" step="1" oninput="updateActiveLayerParam('lineStep', parseInt(this.value))">
+                </div>
+
+                <!-- Recursive center parent tracker selection -->
+                <div class="space-y-1.5 p-2.5 bg-slate-900/40 rounded border border-slate-900">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>Child-Tracking Link</span>
+                        <i class="fa-solid fa-bezier-curve text-[10px] text-blue-400"></i>
+                    </label>
+                    <select id="param-parentId" onchange="updateActiveLayerParent(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200 outline-none focus:border-blue-500">
+                        <option value="">None (Static Origin)</option>
+                    </select>
+                </div>
+
+                <!-- Toggle Draw target rendering behavior -->
+                <div class="flex items-center justify-between p-2.5 bg-slate-900/40 rounded border border-slate-900 text-xs">
+                    <span class="text-slate-400 font-semibold text-[11px]">Draw at Orbit Vertices</span>
+                    <input type="checkbox" id="param-drawAtVertices" onchange="updateActiveLayerParam('drawAtVertices', this.checked)" class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-800">
+                </div>
+
+                <!-- Base Phase angle -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Rotation Offset</span>
+                        <span id="val-phase" class="text-blue-400 code-font">0°</span>
+                    </div>
+                    <input type="range" id="param-phase" min="0" max="6.28" step="0.01" oninput="updateActiveLayerParam('phase', parseFloat(this.value))">
+                </div>
+
+                <!-- Rings count -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Concentric Rings</span>
+                        <span id="val-rings" class="text-blue-400 code-font">1</span>
+                    </div>
+                    <input type="range" id="param-rings" min="1" max="8" step="1" oninput="updateActiveLayerParam('rings', parseInt(this.value))">
+                </div>
+
+                <!-- Wave Animations Section -->
+                <div class="border-t border-slate-900 pt-3 space-y-3">
+                    <h5 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dynamic Wave Movement</h5>
+
+                    <!-- Rotation phase spin speed -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-400 text-[11px]"><i class="fa-solid fa-rotate mr-1 text-slate-600"></i> Phase Spin</span>
+                            <span id="val-rotationSpeed" class="text-blue-400 code-font">0.0</span>
+                        </div>
+                        <input type="range" id="param-rotationSpeed" min="-0.03" max="0.03" step="0.001" oninput="updateActiveLayerParam('rotationSpeed', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Expansion breathing speed -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-400 text-[11px]"><i class="fa-solid fa-expand mr-1 text-slate-600"></i> Pulsing Speed</span>
+                            <span id="val-breathingSpeed" class="text-blue-400 code-font">0.0</span>
+                        </div>
+                        <input type="range" id="param-breathingSpeed" min="0" max="0.06" step="0.001" oninput="updateActiveLayerParam('breathingSpeed', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Amplitude height of breathing wave -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-400 text-[11px]">Pulse Amplitude</span>
+                            <span id="val-breathingAmount" class="text-blue-400 code-font">20%</span>
+                        </div>
+                        <input type="range" id="param-breathingAmount" min="0.05" max="0.6" step="0.01" oninput="updateActiveLayerParam('breathingAmount', parseFloat(this.value))">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Visual parameters -->
+            <div id="tabContent-styling" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+                <!-- Color Selector -->
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                        <span>Stroke Color</span>
+                        <span id="val-strokeColor" class="text-blue-400 code-font">#00ffcc</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="color" id="param-strokeColor" oninput="updateActiveLayerParam('strokeColor', this.value)" class="w-10 h-8 rounded border-0 bg-transparent cursor-pointer shrink-0">
+                        <input type="text" id="param-strokeColorHex" onchange="updateActiveLayerParam('strokeColor', this.value)" class="flex-1 bg-slate-900 border border-slate-800 rounded p-1 text-xs text-slate-200 outline-none code-font uppercase">
+                    </div>
+                </div>
+
+                <!-- Spectral Cycle Selector -->
+                <div class="flex items-center justify-between p-2.5 bg-slate-900/40 rounded border border-slate-900 text-xs">
+                    <span class="text-slate-400 font-semibold text-[11px]">Spectral Color Cycling</span>
+                    <input type="checkbox" id="param-colorCycle" onchange="updateActiveLayerParam('colorCycle', this.checked)" class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-800">
+                </div>
+
+                <!-- Stroke width -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Stroke Weight</span>
+                        <span id="val-strokeWidth" class="text-blue-400 code-font">1.5px</span>
+                    </div>
+                    <input type="range" id="param-strokeWidth" min="0.5" max="6" step="0.1" oninput="updateActiveLayerParam('strokeWidth', parseFloat(this.value))">
+                </div>
+
+                <!-- Fill opacity -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Fill Opacity</span>
+                        <span id="val-fillOpacity" class="text-blue-400 code-font">0%</span>
+                    </div>
+                    <input type="range" id="param-fillOpacity" min="0" max="0.8" step="0.01" oninput="updateActiveLayerParam('fillOpacity', parseFloat(this.value))">
+                </div>
+
+                <!-- Engine Visual overlay configs -->
+                <div class="border-t border-slate-900 pt-3 space-y-3">
+                    <h5 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Engine Visual Overlays</h5>
+
+                    <div class="flex items-center justify-between p-2.5 bg-slate-900/40 rounded border border-slate-900 text-xs">
+                        <span class="text-slate-400 font-semibold text-[11px]">Bloom Glow effects</span>
+                        <input type="checkbox" id="opt-glowEnabled" onchange="toggleEngineOverlay('glowEnabled', this.checked)" class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-800" checked>
+                    </div>
+
+                    <div class="flex items-center justify-between p-2.5 bg-slate-900/40 rounded border border-slate-900 text-xs">
+                        <span class="text-slate-400 font-semibold text-[11px]">Rotational Axis Guides</span>
+                        <input type="checkbox" id="opt-showGuides" onchange="toggleEngineOverlay('showGuides', this.checked)" class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-800">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Blending Layer mode</label>
+                        <select id="opt-blendMode" onchange="updateEngineBlendMode(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200 outline-none focus:border-blue-500">
+                            <option value="screen">Screen (Intersects Glow)</option>
+                            <option value="lighter">Lighter (High contrast)</option>
+                            <option value="source-over">Normal (Solid Layering)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Manual Content (Mobile integrated tab) -->
+            <div id="tabContent-guide" class="flex-1 overflow-y-auto p-4 space-y-4 hidden lg:hidden">
+                <div class="space-y-3">
+                    <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span class="w-4 h-4 rounded bg-blue-500/10 text-blue-400 flex items-center justify-center text-[9px] font-bold">1</span>
+                            The Power of Symmetry ($N$-Fold)
+                        </h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                            Rotational symmetry structures space into equal wedges. Modifying structural points partitions the mandala into balanced sacred sectors (like $3, 4, 6,$ or $8$).
+                        </p>
+                    </div>
+
+                    <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span class="w-4 h-4 rounded bg-blue-500/10 text-blue-400 flex items-center justify-center text-[9px] font-bold">2</span>
+                            Child Tracking & Grid Recursion
+                        </h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                            Rather than drawing from the origin, **Child Tracking** anchors the centerpoint of Layer B onto the generated vertices of Layer A. This creates fractal networks!
+                        </p>
+                        <button onclick="loadPreset('recursiveLattice')" class="w-full py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-white text-[9px] font-semibold rounded border border-blue-500/20 transition-all flex items-center justify-center gap-1 min-h-[34px]">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Load Tracking Preset
+                        </button>
+                    </div>
+
+                    <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span class="w-4 h-4 rounded bg-blue-500/10 text-blue-400 flex items-center justify-center text-[9px] font-bold">3</span>
+                            Wave Modulation
+                        </h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">
+                            Applying sinusoidal wave modulations to layer dimensions allows mandalas to organically breathe and pulse in harmony:
+                        </p>
+                        <div class="bg-slate-950 p-2 rounded border border-slate-900 text-[9px] text-slate-400 code-font">
+                            $$R(t) = R_{base} \cdot (1 + A \cdot \sin(\omega_b \cdot t))$$
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- WORKSPACE PORTION 3: Static Reference Guide (Hidden on mobile, static right-sidebar on desktop) -->
+        <aside id="rightManualDrawer" class="hidden lg:flex w-[330px] bg-slate-950 border-l border-slate-900 flex-col shrink-0 overflow-hidden">
+            <!-- Documentation Tabs -->
+            <div class="flex border-b border-slate-900 bg-slate-950 shrink-0">
+                <button onclick="switchDocTab('tutorials')" id="docTabBtn-tutorials" class="flex-1 py-3 text-[11px] font-semibold text-center border-b-2 border-blue-500 text-blue-400 bg-slate-900/10">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> Lessons
+                </button>
+                <button onclick="switchDocTab('blueprints')" id="docTabBtn-blueprints" class="flex-1 py-3 text-[11px] font-semibold text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-compass mr-1"></i> Math & Grid
+                </button>
+            </div>
+
+            <!-- DOCUMENT TAB 1: Quick Lessons (Desktop version) -->
+            <div id="docContent-tutorials" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="space-y-1">
+                    <h3 class="text-xs font-bold text-slate-200">Sacred Geometry Core Lessons</h3>
+                    <p class="text-[10px] text-slate-500">Interactive quick-studies on geometric principles.</p>
+                </div>
+
+                <!-- Tutorial 1 -->
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] font-bold code-font">1</span>
+                        <h4 class="text-xs font-bold text-slate-200">The Power of Symmetry ($N$-Fold)</h4>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        Rotational symmetry structures the space into equal wedges. Modifying structural points partitions the mandala into balanced sacred sectors (like $3, 4, 6,$ or $8$).
+                    </p>
+                </div>
+
+                <!-- Tutorial 2 -->
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] font-bold code-font">2</span>
+                        <h4 class="text-xs font-bold text-slate-200">Child Tracking & Grid Recursion</h4>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        Rather than drawing from the origin, **Child Tracking** anchors the centerpoint of Layer B onto the generated vertices of Layer A. This creates fractal networks!
+                    </p>
+                    <button onclick="loadPreset('recursiveLattice')" class="w-full py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-white text-[10px] font-semibold rounded border border-blue-500/20 transition-all flex items-center justify-center gap-1 min-h-[34px]">
+                        <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Load Tracking Preset
+                    </button>
+                </div>
+
+                <!-- Tutorial 3 -->
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-900 space-y-2">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center text-[10px] font-bold code-font">3</span>
+                        <h4 class="text-xs font-bold text-slate-200">Harmonic Modulations</h4>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        Applying sinusoidal wave modulations to layer dimensions allows mandalas to organically breathe and pulse in harmony.
+                    </p>
+                    <div class="bg-slate-950 p-2 rounded border border-slate-900 text-[10px] text-slate-400 code-font">
+                        $$R(t) = R_{base} \cdot (1 + A \cdot \sin(\omega_b \cdot t))$$
+                    </div>
+                    <button onclick="loadPreset('hypnoticVortex')" class="w-full py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-white text-[10px] font-semibold rounded border border-blue-500/20 transition-all flex items-center justify-center gap-1 min-h-[34px]">
+                        <i class="fa-solid fa-compass-drafting text-[9px]"></i> Load Vortex Preset
+                    </button>
+                </div>
+            </div>
+
+            <!-- DOCUMENT TAB 2: Mathematical / Structural Blueprints -->
+            <div id="docContent-blueprints" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+                <div class="space-y-1">
+                    <h3 class="text-xs font-bold text-slate-200">Sacred Blueprint Manual</h3>
+                    <p class="text-[10px] text-slate-500">Mathematical equations styling modern mandalas.</p>
+                </div>
+
+                <div class="space-y-2.5">
+                    <h4 class="text-[11px] font-bold text-blue-400 uppercase tracking-wider">Rotational Division Vectors</h4>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        For any layer containing $S$ structural partitions, the coordinate vertices $(v_x, v_y)$ are calculated using polar mapping rules:
+                    </p>
+                    <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-[10px] text-slate-300 space-y-1 code-font">
+                        <p>$\theta_k = \frac{2\pi \cdot k}{S} + \phi_{phase} + \omega_r \cdot t$</p>
+                        <p>$v_x = c_x + R_t \cdot \cos(\theta_k)$</p>
+                        <p>$v_y = c_y + R_t \cdot \sin(\theta_k)$</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Page Footer / Touch Guidance Status Bar -->
+    <footer class="glass-panel border-t border-slate-900 px-4 py-2 flex items-center justify-between text-[10px] text-slate-400 shrink-0 z-20">
+        <span class="flex items-center gap-1">
+            <i class="fa-solid fa-mobile-screen-button text-blue-400"></i> Swipe controls: Drag to pan, pinch with 2 fingers to zoom.
+        </span>
+        <span class="hidden sm:inline">Inspired by <a href="https://www.instagram.com/calvin_chak_art" target="_blank" class="text-blue-400 hover:underline">Calvin Chak Art</a></span>
+    </footer>
+
+    <!-- Interactive JS Application Engine -->
+    <script>
+        // Layer Structure Definition
+        class Layer {
+            constructor(id, name, options = {}) {
+                this.id = id ? String(id) : Date.now().toString();
+                this.name = name || `Layer ${this.id}`;
+                this.visible = options.visible !== undefined ? options.visible : true;
+                
+                // Geometry options
+                this.shapeType = options.shapeType || 'circle'; 
+                this.symmetry = options.symmetry !== undefined ? parseInt(options.symmetry) : 6;
+                this.radius = options.radius !== undefined ? parseInt(options.radius) : 120;
+                this.innerRadiusRatio = options.innerRadiusRatio !== undefined ? parseFloat(options.innerRadiusRatio) : 0.4; 
+                this.lineStep = options.lineStep !== undefined ? parseInt(options.lineStep) : 2; 
+                this.drawAtVertices = options.drawAtVertices !== undefined ? options.drawAtVertices : false;
+                this.parentId = options.parentId ? String(options.parentId) : null; 
+                this.rings = options.rings !== undefined ? parseInt(options.rings) : 1; 
+                
+                // Animation settings
+                this.phase = options.phase !== undefined ? parseFloat(options.phase) : 0; 
+                this.rotationSpeed = options.rotationSpeed !== undefined ? parseFloat(options.rotationSpeed) : 0.005; 
+                this.breathingSpeed = options.breathingSpeed !== undefined ? parseFloat(options.breathingSpeed) : 0.0;
+                this.breathingAmount = options.breathingAmount !== undefined ? parseFloat(options.breathingAmount) : 0.2; 
+                this.breathingPhase = 0; 
+                
+                // Styling
+                this.strokeColor = options.strokeColor || '#3b82f6';
+                this.colorCycle = options.colorCycle !== undefined ? options.colorCycle : false;
+                this.colorCycleSpeed = options.colorCycleSpeed || 1.0;
+                this.strokeWidth = options.strokeWidth !== undefined ? parseFloat(options.strokeWidth) : 1.5;
+                this.fillOpacity = options.fillOpacity !== undefined ? parseFloat(options.fillOpacity) : 0.0;
+            }
+        }
+
+        // Engine State Configuration
+        const state = {
+            layers: [],
+            activeLayerId: null,
+            isPlaying: true,
+            time: 0,
+            
+            // Viewport Coordinates
+            zoom: 1.0,
+            pan: { x: 0, y: 0 },
+            isDragging: false,
+            lastMousePos: { x: 0, y: 0 },
+            
+            // Global Overlay Controls
+            glowEnabled: true,
+            showGuides: false,
+            blendMode: 'screen',
+            
+            renderedVertexCount: 0
+        };
+
+        let canvas, ctx;
+
+        // Initialize App
+        window.onload = function() {
+            canvas = document.getElementById('mandalaCanvas');
+            ctx = canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                requestAnimationFrame(render);
+            });
+
+            setupViewportInteractions();
+            setupTouchInteractions();
+            setupKeyboardShortcuts();
+
+            // Load Default Preset to start workspace beautifully
+            loadPreset('flowerOfLife');
+
+            // Boot Main Engine Rendering Loop
+            engineLoop();
+        };
+
+        // Resize Canvas to take entire parent area safely
+        function resizeCanvas() {
+            const parent = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            const targetWidth = parent.clientWidth;
+            const targetHeight = parent.clientHeight;
+            
+            canvas.width = targetWidth * dpr;
+            canvas.height = targetHeight * dpr;
+            canvas.style.width = targetWidth + 'px';
+            canvas.style.height = targetHeight + 'px';
+            
+            ctx.scale(dpr, dpr);
+        }
+
+        // Setup Desktop Mouse drag/zoom
+        function setupViewportInteractions() {
+            canvas.addEventListener('mousedown', (e) => {
+                state.isDragging = true;
+                state.lastMousePos = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!state.isDragging) return;
+                const dx = e.clientX - state.lastMousePos.x;
+                const dy = e.clientY - state.lastMousePos.y;
+                
+                state.pan.x += dx;
+                state.pan.y += dy;
+                
+                state.lastMousePos = { x: e.clientX, y: e.clientY };
+                if (!state.isPlaying) requestAnimationFrame(render);
+            });
+
+            window.addEventListener('mouseup', () => {
+                state.isDragging = false;
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
+                adjustZoom(zoomFactor);
+            }, { passive: false });
+        }
+
+        // Setup touch panning & pinch zoom mechanics
+        let touchStartDist = 0;
+        let touchStartZoom = 1;
+        let isPinching = false;
+
+        function setupTouchInteractions() {
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    state.isDragging = true;
+                    state.lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    isPinching = false;
+                } else if (e.touches.length === 2) {
+                    state.isDragging = false;
+                    isPinching = true;
+                    touchStartDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    touchStartZoom = state.zoom;
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && state.isDragging) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - state.lastMousePos.x;
+                    const dy = touch.clientY - state.lastMousePos.y;
+                    
+                    state.pan.x += dx;
+                    state.pan.y += dy;
+                    
+                    state.lastMousePos = { x: touch.clientX, y: touch.clientY };
+                    if (!state.isPlaying) requestAnimationFrame(render);
+                } else if (e.touches.length === 2 && isPinching) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    if (touchStartDist > 0) {
+                        const factor = dist / touchStartDist;
+                        state.zoom = Math.max(0.1, Math.min(touchStartZoom * factor, 8));
+                        if (!state.isPlaying) requestAnimationFrame(render);
+                    }
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchend', (e) => {
+                state.isDragging = false;
+                isPinching = false;
+                touchStartDist = 0;
+            });
+        }
+
+        function setupKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    togglePlayback();
+                } else if (e.code === 'KeyN') {
+                    e.preventDefault();
+                    addNewLayer();
+                } else if (e.code === 'KeyR') {
+                    e.preventDefault();
+                    resetCamera();
+                }
+            });
+        }
+
+        // Custom Sleek Toast Notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-xl border shadow-xl flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-300 text-xs font-semibold backdrop-blur-md ` +
+                (type === 'error' 
+                    ? 'bg-red-950/90 border-red-500/30 text-red-400' 
+                    : 'bg-slate-900/90 border-blue-500/30 text-blue-400');
+            
+            const icon = type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Offcanvas Mobile Sidebar Switcher
+        function toggleMobileDrawer(side) {
+            const drawer = side === 'left' ? document.getElementById('leftDesignerDrawer') : document.getElementById('rightManualDrawer');
+            const backdrop = side === 'left' ? document.getElementById('leftDrawerBackdrop') : document.getElementById('rightDrawerBackdrop');
+            
+            if (drawer.classList.contains('-translate-x-full') || drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('-translate-x-full', 'translate-x-full');
+                backdrop.classList.remove('hidden');
+                
+                const oppSide = side === 'left' ? 'right' : 'left';
+                const oppDrawer = oppSide === 'left' ? document.getElementById('leftDesignerDrawer') : document.getElementById('rightManualDrawer');
+                const oppBackdrop = oppSide === 'left' ? document.getElementById('leftDrawerBackdrop') : document.getElementById('rightDrawerBackdrop');
+                oppDrawer.classList.add(oppSide === 'left' ? '-translate-x-full' : 'translate-x-full');
+                oppBackdrop.classList.add('hidden');
+            } else {
+                drawer.classList.add(side === 'left' ? '-translate-x-full' : 'translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        function togglePresetsSheet() {
+            const sheet = document.getElementById('mobilePresetsSheet');
+            if (sheet.classList.contains('hidden')) {
+                sheet.classList.remove('hidden');
+                sheet.classList.add('flex');
+            } else {
+                sheet.classList.add('hidden');
+                sheet.classList.remove('flex');
+            }
+        }
+
+        // Engine Animation System Loop
+        function engineLoop() {
+            if (state.isPlaying) {
+                state.time += 1;
+                state.layers.forEach(layer => {
+                    layer.phase += layer.rotationSpeed;
+                    layer.breathingPhase += layer.breathingSpeed;
+                });
+            }
+
+            render();
+            requestAnimationFrame(engineLoop);
+        }
+
+        // Core Mandala Geometry Calculation & Render Frame Call
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+
+            // Set current zoom translation parameters
+            const dpr = window.devicePixelRatio || 1;
+            const cx = (canvas.width / dpr) / 2 + state.pan.x;
+            const cy = (canvas.height / dpr) / 2 + state.pan.y;
+            
+            ctx.translate(cx, cy);
+            ctx.scale(state.zoom, state.zoom);
+
+            ctx.globalCompositeOperation = state.blendMode;
+
+            const layerPointsMap = new Map();
+            state.renderedVertexCount = 0;
+
+            if (state.showGuides) {
+                drawSymmetryGuides();
+            }
+
+            const sortedLayers = topologicalSortLayers();
+            sortedLayers.forEach(layer => {
+                if (!layer.visible) return;
+                
+                let originCenters = [{ x: 0, y: 0 }];
+                if (layer.parentId) {
+                    const parentPoints = layerPointsMap.get(String(layer.parentId));
+                    if (parentPoints && parentPoints.length > 0) {
+                        originCenters = parentPoints;
+                    }
+                }
+
+                const layerVertices = [];
+                let strokeColor = layer.strokeColor;
+                if (layer.colorCycle) {
+                    const cycleHue = (state.time * layer.colorCycleSpeed) % 360;
+                    strokeColor = `hsla(${cycleHue}, 100%, 65%, 1)`;
+                }
+
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = layer.strokeWidth;
+                
+                if (state.glowEnabled) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = strokeColor;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                let calculatedRadius = layer.radius;
+                if (layer.breathingSpeed > 0) {
+                    const breatheMultiplier = 1 + Math.sin(layer.breathingPhase) * layer.breathingAmount;
+                    calculatedRadius = layer.radius * breatheMultiplier;
+                }
+
+                for (let rIdx = 0; rIdx < layer.rings; rIdx++) {
+                    const scaleFactor = 1 - (rIdx * (1 / (layer.rings + 1)));
+                    const ringRadius = calculatedRadius * scaleFactor;
+
+                    originCenters.forEach(center => {
+                        const vertices = [];
+                        for (let s = 0; s < layer.symmetry; s++) {
+                            const angle = (s * Math.PI * 2) / layer.symmetry + layer.phase;
+                            const vx = center.x + ringRadius * Math.cos(angle);
+                            const vy = center.y + ringRadius * Math.sin(angle);
+                            vertices.push({ x: vx, y: vy });
+                            layerVertices.push({ x: vx, y: vy });
+                        }
+
+                        state.renderedVertexCount += vertices.length;
+
+                        if (layer.drawAtVertices) {
+                            vertices.forEach(v => {
+                                drawSubShape(v.x, v.y, ringRadius * 0.4, layer, strokeColor);
+                            });
+                        } else {
+                            drawMainShape(center.x, center.y, ringRadius, vertices, layer, strokeColor);
+                        }
+                    });
+                }
+
+                // Preserve calculations for parent dependency tracks
+                layerPointsMap.set(String(layer.id), layerVertices.slice(0, 1000));
+            });
+
+            ctx.restore();
+            updateHUDMetrics();
+        }
+
+        function drawSymmetryGuides() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 0;
+            
+            const maxRadius = 1000;
+            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(maxRadius * Math.cos(angle), maxRadius * Math.sin(angle));
+                ctx.stroke();
+            }
+
+            for (let r = 50; r < 500; r += 50) {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawMainShape(cx, cy, radius, vertices, layer, strokeColor) {
+            ctx.save();
+            
+            if (layer.fillOpacity > 0) {
+                ctx.fillStyle = changeColorOpacity(strokeColor, layer.fillOpacity);
+            }
+
+            switch(layer.shapeType) {
+                case 'circle':
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'polygon':
+                    ctx.beginPath();
+                    vertices.forEach((v, index) => {
+                        if (index === 0) ctx.moveTo(v.x, v.y);
+                        else ctx.lineTo(v.x, v.y);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'star':
+                    ctx.beginPath();
+                    const pts = layer.symmetry;
+                    for (let s = 0; s < pts * 2; s++) {
+                        const angle = (s * Math.PI) / pts + layer.phase;
+                        const r = s % 2 === 0 ? radius : radius * layer.innerRadiusRatio;
+                        const vx = cx + r * Math.cos(angle);
+                        const vy = cy + r * Math.sin(angle);
+                        
+                        if (s === 0) ctx.moveTo(vx, vy);
+                        else ctx.lineTo(vx, vy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'connected_lines':
+                    for (let i = 0; i < vertices.length; i++) {
+                        const targetIdx = (i + layer.lineStep) % vertices.length;
+                        ctx.beginPath();
+                        ctx.moveTo(vertices[i].x, vertices[i].y);
+                        ctx.lineTo(vertices[targetIdx].x, vertices[targetIdx].y);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 'flower_of_life':
+                    vertices.forEach(v => {
+                        ctx.beginPath();
+                        ctx.arc(v.x, v.y, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    });
+                    break;
+            }
+            ctx.restore();
+        }
+
+        function drawSubShape(cx, cy, radius, layer, strokeColor) {
+            ctx.save();
+            
+            if (layer.fillOpacity > 0) {
+                ctx.fillStyle = changeColorOpacity(strokeColor, layer.fillOpacity);
+            }
+
+            // Generate sub-vertices for the sub-shape
+            const subVertices = [];
+            for (let s = 0; s < layer.symmetry; s++) {
+                const angle = (s * Math.PI * 2) / layer.symmetry + layer.phase;
+                const vx = cx + radius * Math.cos(angle);
+                const vy = cy + radius * Math.sin(angle);
+                subVertices.push({ x: vx, y: vy });
+            }
+
+            switch(layer.shapeType) {
+                case 'circle':
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'polygon':
+                    ctx.beginPath();
+                    subVertices.forEach((v, index) => {
+                        if (index === 0) ctx.moveTo(v.x, v.y);
+                        else ctx.lineTo(v.x, v.y);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'star':
+                    ctx.beginPath();
+                    const pts = layer.symmetry;
+                    for (let s = 0; s < pts * 2; s++) {
+                        const angle = (s * Math.PI) / pts + layer.phase;
+                        const r = s % 2 === 0 ? radius : radius * layer.innerRadiusRatio;
+                        const vx = cx + r * Math.cos(angle);
+                        const vy = cy + r * Math.sin(angle);
+                        
+                        if (s === 0) ctx.moveTo(vx, vy);
+                        else ctx.lineTo(vx, vy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    if (layer.fillOpacity > 0) ctx.fill();
+                    break;
+
+                case 'connected_lines':
+                    for (let i = 0; i < subVertices.length; i++) {
+                        const targetIdx = (i + layer.lineStep) % subVertices.length;
+                        ctx.beginPath();
+                        ctx.moveTo(subVertices[i].x, subVertices[i].y);
+                        ctx.lineTo(subVertices[targetIdx].x, subVertices[targetIdx].y);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 'flower_of_life':
+                    subVertices.forEach(v => {
+                        ctx.beginPath();
+                        ctx.arc(v.x, v.y, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    });
+                    break;
+            }
+            ctx.restore();
+        }
+
+        function topologicalSortLayers() {
+            const visited = new Set();
+            const stack = [];
+            
+            function visit(layerId) {
+                const sId = String(layerId);
+                if (visited.has(sId)) return;
+                visited.add(sId);
+                
+                const layer = state.layers.find(l => String(l.id) === sId);
+                if (!layer) return;
+                
+                if (layer.parentId) {
+                    visit(layer.parentId);
+                }
+                
+                stack.push(layer);
+            }
+            
+            state.layers.forEach(layer => visit(layer.id));
+            return stack;
+        }
+
+        function changeColorOpacity(colorHex, opacity) {
+            let c;
+            if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(colorHex)){
+                c= colorHex.substring(1).split('');
+                if(c.length== 3){
+                    c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+                }
+                c= '0x'+c.join('');
+                return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+opacity+')';
+            }
+            return colorHex;
+        }
+
+        // Standard Actions
+        function togglePlayback() {
+            state.isPlaying = !state.isPlaying;
+            const btn = document.getElementById('btn-play');
+            const dot = document.getElementById('playbackStatusDot');
+            
+            if (state.isPlaying) {
+                btn.innerHTML = '<i class="fa-solid fa-pause text-xs"></i>';
+                btn.className = "w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all focus:outline-none shadow-md shadow-blue-500/10";
+                if(dot) { dot.classList.add('bg-emerald-400', 'animate-pulse'); dot.classList.remove('bg-amber-500'); }
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-play text-xs ml-0.5"></i>';
+                btn.className = "w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all focus:outline-none shadow-md shadow-emerald-500/10";
+                if(dot) { dot.classList.remove('bg-emerald-400', 'animate-pulse'); dot.classList.add('bg-amber-500'); }
+            }
+        }
+
+        function resetTimeline() {
+            state.time = 0;
+            state.layers.forEach(layer => {
+                layer.phase = 0;
+                layer.breathingPhase = 0;
+            });
+            showToast("Animation Timeline Reset");
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        function adjustZoom(factor) {
+            state.zoom = Math.max(0.1, Math.min(state.zoom * factor, 8));
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        function resetCamera() {
+            state.zoom = 1.0;
+            state.pan = { x: 0, y: 0 };
+            showToast("Camera View Aligned 1:1");
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        function addNewLayer() {
+            const uniqueId = Date.now().toString();
+            const names = ["Lotus Grid", "Ethereal Core", "Symmetric Ring", "Metatron Spoke"];
+            const randomName = `${names[Math.floor(Math.random() * names.length)]} ${state.layers.length + 1}`;
+            
+            const prevLayer = state.layers[state.layers.length - 1];
+            const parentOption = prevLayer ? String(prevLayer.id) : null;
+            
+            const newLayer = new Layer(uniqueId, randomName, {
+                radius: prevLayer ? Math.max(30, prevLayer.radius - 30) : 120,
+                symmetry: prevLayer ? prevLayer.symmetry : 6,
+                strokeColor: getRandomNeonColor(),
+                parentId: parentOption
+            });
+
+            state.layers.push(newLayer);
+            state.activeLayerId = uniqueId;
+            
+            rebuildLayersUI();
+            updateActiveLayerForm();
+            showToast("New Geometry Layer Added");
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        function cloneLayer(id) {
+            const src = state.layers.find(l => String(l.id) === String(id));
+            if (!src) return;
+
+            const cloneId = Date.now().toString();
+            const clone = new Layer(cloneId, `${src.name} (Clone)`, {
+                shapeType: src.shapeType,
+                symmetry: src.symmetry,
+                radius: src.radius * 0.8,
+                innerRadiusRatio: src.innerRadiusRatio,
+                lineStep: src.lineStep,
+                drawAtVertices: src.drawAtVertices,
+                parentId: src.id, 
+                rings: src.rings,
+                phase: src.phase,
+                rotationSpeed: -src.rotationSpeed, 
+                breathingSpeed: src.breathingSpeed,
+                breathingAmount: src.breathingAmount,
+                strokeColor: getRandomNeonColor(),
+                colorCycle: src.colorCycle,
+                strokeWidth: src.strokeWidth,
+                fillOpacity: src.fillOpacity
+            });
+
+            state.layers.push(clone);
+            state.activeLayerId = cloneId;
+            rebuildLayersUI();
+            updateActiveLayerForm();
+            showToast("Layer Cloned (Spin Speed Reversed)");
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        // Clean-up and restructure layer deletion
+        function deleteLayer(id) {
+            if (state.layers.length <= 1) {
+                showToast("Cannot delete the last layer! Keep at least one.", "error");
+                return;
+            }
+            
+            state.layers.forEach(layer => {
+                if (String(layer.parentId) === String(id)) layer.parentId = null;
+            });
+
+            state.layers = state.layers.filter(l => String(l.id) !== String(id));
+            
+            if (String(state.activeLayerId) === String(id)) {
+                state.activeLayerId = String(state.layers[0].id);
+            }
+
+            rebuildLayersUI();
+            updateActiveLayerForm();
+            showToast("Layer Deleted");
+            if (!state.isPlaying) requestAnimationFrame(render);
+        }
+
+        function selectLayer(id) {
+            state.activeLayerId = String(id);
+            rebuildLayersUI();
+            updateActiveLayerForm();
+            switchSidebarTab('parameters');
+        }
+
+        function toggleLayerVisibility(id, event) {
+            event.stopPropagation();
+            const layer = state.layers.find(l => String(l.id) === String(id));
+            if (layer) {
+                layer.visible = !layer.visible;
+                rebuildLayersUI();
+                if (!state.isPlaying) requestAnimationFrame(render);
+            }
+        }
+
+        function rebuildLayersUI() {
+            const container = document.getElementById('layerListContainer');
+            container.innerHTML = '';
+
+            state.layers.forEach((layer) => {
+                const isActive = String(layer.id) === String(state.activeLayerId);
+                const activeClass = isActive 
+                    ? 'border-blue-500 bg-blue-600/10' 
+                    : 'border-slate-900 bg-slate-950 hover:border-slate-800';
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${activeClass}`;
+                card.onclick = () => selectLayer(layer.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <button onclick="toggleLayerVisibility('${layer.id}', event)" class="text-slate-500 hover:text-white px-1">
+                            <i class="fa-regular ${layer.visible ? 'fa-eye text-blue-400' : 'fa-eye-slash'} text-xs"></i>
+                        </button>
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-semibold text-slate-200 truncate">${layer.name}</p>
+                            <div class="flex items-center gap-1.5 text-[9px] text-slate-400">
+                                <span class="capitalize">${layer.shapeType.replace('_', ' ')}</span>
+                                <span>•</span>
+                                <span>${layer.symmetry} pt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="event.stopPropagation(); cloneLayer('${layer.id}')" class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-all" title="Clone Layer">
+                            <i class="fa-regular fa-copy text-[10px]"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteLayer('${layer.id}')" class="w-8 h-8 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 flex items-center justify-center transition-all" title="Delete Layer">
+                            <i class="fa-regular fa-trash-can text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function updateActiveLayerParam(field, val) {
+            const layer = state.layers.find(l => String(l.id) === String(state.activeLayerId));
+            if (!layer) return;
+
+            // Ensure correct parameter type coercions before setting values
+            if (field === 'symmetry' || field === 'radius' || field === 'rings' || field === 'lineStep') {
+                val = parseInt(val);
+            } else if (field === 'innerRadiusRatio' || field === 'phase' || field === 'rotationSpeed' || field === 'breathingSpeed' || field === 'breathingAmount' || field === 'strokeWidth' || field === 'fillOpacity') {
+                val = parseFloat(val);
+            }
+
+            layer[field] = val;
+
+            const labelMap = {
+                'symmetry': 'val-symmetry',
+                'radius': 'val-radius',
+                'innerRadiusRatio': 'val-innerRadiusRatio',
+                'lineStep': 'val-lineStep',
+                'phase': 'val-phase',
+                'rings': 'val-rings',
+                'rotationSpeed': 'val-rotationSpeed',
+                'breathingSpeed': 'val-breathingSpeed',
+                'breathingAmount': 'val-breathingAmount',
+                'strokeWidth': 'val-strokeWidth',
+                'fillOpacity': 'val-fillOpacity',
+                'strokeColor': 'val-strokeColor'
+            };
+
+            const elementId = labelMap[field];
+            if (elementId) {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    if (field === 'radius' || field === 'strokeWidth') el.innerText = `${val}px`;
+                    else if (field === 'breathingAmount' || field === 'fillOpacity') el.innerText = `${Math.round(val * 100)}%`;
+                    else if (field === 'phase') el.innerText = `${Math.round((val * 180) / Math.PI)}°`;
+                    else el.innerText = val;
+                }
+            }
+
+            if (field === 'strokeColor') {
+                document.getElementById('param-strokeColor').value = val;
+                document.getElementById('param-strokeColorHex').value = val;
+            }
+
+            if (field === 'shapeType') {
+                toggleConditionalParamGroups(val);
+                rebuildLayersUI();
+            }
+
+            // Immediately repaint frame so parameter modifications are perfectly real-time
+            render();
+        }
+
+        function updateActiveLayerParent(parentIdVal) {
+            const layer = state.layers.find(l => String(l.id) === String(state.activeLayerId));
+            if (!layer) return;
+
+            if (String(parentIdVal) === String(layer.id)) {
+                document.getElementById('param-parentId').value = layer.parentId ? String(layer.parentId) : '';
+                return;
+            }
+
+            layer.parentId = parentIdVal ? String(parentIdVal) : null;
+            rebuildLayersUI();
+            render();
+        }
+
+        function toggleConditionalParamGroups(shapeType) {
+            const starGrp = document.getElementById('param-group-star');
+            const linesGrp = document.getElementById('param-group-connected');
+            
+            if (shapeType === 'star') {
+                starGrp.classList.remove('hidden');
+            } else {
+                starGrp.classList.add('hidden');
+            }
+
+            if (shapeType === 'connected_lines') {
+                linesGrp.classList.remove('hidden');
+            } else {
+                linesGrp.classList.add('hidden');
+            }
+        }
+
+        function updateActiveLayerForm() {
+            const layer = state.layers.find(l => String(l.id) === String(state.activeLayerId));
+            if (!layer) return;
+
+            document.getElementById('activeLayerTitle').innerText = layer.name;
+            document.getElementById('activeLayerBadge').innerText = `ID-${String(layer.id).slice(-4)}`;
+
+            document.getElementById('param-shapeType').value = layer.shapeType;
+            document.getElementById('param-symmetry').value = layer.symmetry;
+            document.getElementById('param-radius').value = layer.radius;
+            document.getElementById('param-innerRadiusRatio').value = layer.innerRadiusRatio;
+            document.getElementById('param-lineStep').value = layer.lineStep;
+            document.getElementById('param-drawAtVertices').checked = layer.drawAtVertices;
+            document.getElementById('param-phase').value = layer.phase;
+            document.getElementById('param-rings').value = layer.rings;
+            document.getElementById('param-rotationSpeed').value = layer.rotationSpeed;
+            document.getElementById('param-breathingSpeed').value = layer.breathingSpeed;
+            document.getElementById('param-breathingAmount').value = layer.breathingAmount;
+            
+            document.getElementById('param-strokeColor').value = layer.strokeColor;
+            document.getElementById('param-strokeColorHex').value = layer.strokeColor;
+            document.getElementById('param-colorCycle').checked = layer.colorCycle;
+            document.getElementById('param-strokeWidth').value = layer.strokeWidth;
+            document.getElementById('param-fillOpacity').value = layer.fillOpacity;
+
+            const parentSelect = document.getElementById('param-parentId');
+            parentSelect.innerHTML = '<option value="">None (Independent Center)</option>';
+            state.layers.forEach(l => {
+                if (String(l.id) !== String(layer.id)) {
+                    parentSelect.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+                }
+            });
+            parentSelect.value = layer.parentId ? String(layer.parentId) : '';
+
+            document.getElementById('val-symmetry').innerText = layer.symmetry;
+            document.getElementById('val-radius').innerText = `${layer.radius}px`;
+            document.getElementById('val-innerRadiusRatio').innerText = layer.innerRadiusRatio;
+            document.getElementById('val-lineStep').innerText = layer.lineStep;
+            document.getElementById('val-phase').innerText = `${Math.round((layer.phase * 180) / Math.PI)}°`;
+            document.getElementById('val-rings').innerText = layer.rings;
+            document.getElementById('val-rotationSpeed').innerText = layer.rotationSpeed.toFixed(3);
+            document.getElementById('val-breathingSpeed').innerText = layer.breathingSpeed.toFixed(3);
+            document.getElementById('val-breathingAmount').innerText = `${Math.round(layer.breathingAmount * 100)}%`;
+            document.getElementById('val-strokeWidth').innerText = `${layer.strokeWidth}px`;
+            document.getElementById('val-fillOpacity').innerText = `${Math.round(layer.fillOpacity * 100)}%`;
+            document.getElementById('val-strokeColor').innerText = layer.strokeColor;
+
+            toggleConditionalParamGroups(layer.shapeType);
+        }
+
+        function toggleEngineOverlay(opt, checked) {
+            state[opt] = checked;
+            render();
+        }
+
+        function updateEngineBlendMode(val) {
+            state.blendMode = val;
+            render();
+        }
+
+        function updateHUDMetrics() {
+            const hLayers = document.getElementById('hud-layersCount');
+            const hVertices = document.getElementById('hud-vertices');
+            const hZoom = document.getElementById('hud-zoom');
+            
+            if (hLayers) hLayers.innerText = state.layers.length;
+            if (hVertices) hVertices.innerText = state.renderedVertexCount;
+            if (hZoom) hZoom.innerText = `${Math.round(state.zoom * 100)}%`;
+        }
+
+        function switchSidebarTab(tab) {
+            const tabs = ['layers', 'parameters', 'styling', 'guide'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn-${t}`);
+                const content = document.getElementById(`tabContent-${t}`);
+                if (!btn || !content) return;
+                
+                if (t === tab) {
+                    btn.classList.add('border-blue-500', 'text-blue-400', 'bg-slate-900/10');
+                    btn.classList.remove('border-transparent', 'text-slate-400', 'hover:text-slate-200');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-blue-500', 'text-blue-400', 'bg-slate-900/10');
+                    btn.classList.add('border-transparent', 'text-slate-400', 'hover:text-slate-200');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function switchDocTab(tab) {
+            const tabs = ['tutorials', 'blueprints'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`docTabBtn-${t}`);
+                const content = document.getElementById(`docContent-${t}`);
+                if (!btn || !content) return;
+
+                if (t === tab) {
+                    btn.classList.add('border-blue-500', 'text-blue-400', 'bg-slate-900/10');
+                    btn.classList.remove('border-transparent', 'text-slate-400', 'hover:text-slate-200');
+                    content.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-blue-500', 'text-blue-400', 'bg-slate-900/10');
+                    btn.classList.add('border-transparent', 'text-slate-400', 'hover:text-slate-200');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        const PRESET_LIBRARY = {
+            flowerOfLife: [
+                new Layer("1", "Inner Seed", { shapeType: "circle", symmetry: 6, radius: 100, strokeColor: "#00ffcc", drawAtVertices: true, rotationSpeed: 0.002 }),
+                new Layer("2", "Outer Frame", { shapeType: "circle", symmetry: 6, radius: 200, strokeColor: "#3b82f6", drawAtVertices: true, parentId: "1", rotationSpeed: -0.001 })
+            ],
+            metatronsCube: [
+                new Layer("1", "Hex Core Star", { shapeType: "star", symmetry: 6, radius: 150, strokeColor: "#f59e0b", innerRadiusRatio: 0.577, rotationSpeed: 0.001 }),
+                new Layer("2", "Outer Ring Node", { shapeType: "circle", symmetry: 6, radius: 86.6, strokeColor: "#ec4899", parentId: "1", drawAtVertices: false, rotationSpeed: 0.001 }),
+                new Layer("3", "Grid Net Links", { shapeType: "connected_lines", symmetry: 12, radius: 150, strokeColor: "#a855f7", lineStep: 5, strokeWidth: 1.0, rotationSpeed: 0.001 })
+            ],
+            torus: [
+                new Layer("1", "Hypotrochoid Torus", { shapeType: "flower_of_life", symmetry: 24, radius: 130, strokeColor: "#10b981", strokeWidth: 1.0, rotationSpeed: 0.005, breathingSpeed: 0.01, breathingAmount: 0.3 })
+            ],
+            cosmicBreath: [
+                new Layer("1", "Solar Core", { shapeType: "star", symmetry: 8, radius: 180, strokeColor: "#ef4444", innerRadiusRatio: 0.3, rotationSpeed: 0.004, breathingSpeed: 0.02, breathingAmount: 0.5 }),
+                new Layer("2", "Plasma Wind", { shapeType: "polygon", symmetry: 4, radius: 80, strokeColor: "#f59e0b", parentId: "1", rotationSpeed: -0.01, breathingSpeed: 0.04, breathingAmount: 0.2 })
+            ],
+            recursiveLattice: [
+                new Layer("1", "Anchor Star", { shapeType: "star", symmetry: 5, radius: 160, strokeColor: "#a855f7", innerRadiusRatio: 0.382, rotationSpeed: 0.003 }),
+                new Layer("2", "First Generation", { shapeType: "circle", symmetry: 5, radius: 60, strokeColor: "#3b82f6", parentId: "1", drawAtVertices: true, rotationSpeed: -0.006 }),
+                new Layer("3", "Sub-Divisions", { shapeType: "connected_lines", symmetry: 3, radius: 25, strokeColor: "#00ffcc", parentId: "2", drawAtVertices: true, lineStep: 1, strokeWidth: 0.8, rotationSpeed: 0.012 })
+            ],
+            hypnoticVortex: [
+                new Layer("1", "Ring 1", { shapeType: "polygon", symmetry: 12, radius: 220, strokeColor: "#00ffcc", rotationSpeed: 0.005, strokeWidth: 1.0 }),
+                new Layer("2", "Ring 2", { shapeType: "polygon", symmetry: 12, radius: 180, strokeColor: "#06b6d4", rotationSpeed: 0.007, strokeWidth: 1.0 }),
+                new Layer("3", "Ring 3", { shapeType: "polygon", symmetry: 12, radius: 140, strokeColor: "#3b82f6", rotationSpeed: 0.009, strokeWidth: 1.0 }),
+                new Layer("4", "Ring 4", { shapeType: "polygon", symmetry: 12, radius: 100, strokeColor: "#6366f1", rotationSpeed: 0.011, strokeWidth: 1.0 }),
+                new Layer("5", "Ring 5", { shapeType: "polygon", symmetry: 12, radius: 60, strokeColor: "#a855f7", rotationSpeed: 0.013, strokeWidth: 1.0 })
+            ]
+        };
+
+        function loadPreset(key) {
+            const data = PRESET_LIBRARY[key];
+            if (!data) return;
+
+            state.layers = data.map(l => new Layer(l.id, l.name, {
+                shapeType: l.shapeType,
+                symmetry: l.symmetry,
+                radius: l.radius,
+                innerRadiusRatio: l.innerRadiusRatio,
+                lineStep: l.lineStep,
+                drawAtVertices: l.drawAtVertices,
+                parentId: l.parentId,
+                rings: l.rings,
+                phase: l.phase,
+                rotationSpeed: l.rotationSpeed,
+                breathingSpeed: l.breathingSpeed,
+                breathingAmount: l.breathingAmount,
+                strokeColor: l.strokeColor,
+                colorCycle: l.colorCycle,
+                strokeWidth: l.strokeWidth,
+                fillOpacity: l.fillOpacity
+            }));
+
+            if (state.layers.length > 0) {
+                state.activeLayerId = String(state.layers[0].id);
+            }
+            rebuildLayersUI();
+            updateActiveLayerForm();
+            resetCamera();
+            showToast(`Loaded Preset: ${key.replace(/([A-Z])/g, ' $1')}`);
+            render();
+        }
+
+        function getRandomNeonColor() {
+            const colors = ['#00ffcc', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#a855f7', '#ff3366', '#00ffff'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function closeExportModal() {
+            const modal = document.getElementById('exportModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function exportPNG() {
+            showToast("Generating image file...");
+            const renderCanvas = document.createElement('canvas');
+            const targetDPR = 2.0; 
+            renderCanvas.width = 1200 * targetDPR;
+            renderCanvas.height = 1200 * targetDPR;
+            const rCtx = renderCanvas.getContext('2d');
+
+            rCtx.fillStyle = '#05050a';
+            rCtx.fillRect(0, 0, renderCanvas.width, renderCanvas.height);
+
+            rCtx.save();
+            rCtx.translate(renderCanvas.width / 2, renderCanvas.height / 2);
+            rCtx.scale(targetDPR * state.zoom, targetDPR * state.zoom);
+            rCtx.globalCompositeOperation = state.blendMode;
+
+            const layerPointsMap = new Map();
+            const sortedLayers = topologicalSortLayers();
+
+            sortedLayers.forEach(layer => {
+                if (!layer.visible) return;
+
+                let originCenters = [{ x: 0, y: 0 }];
+                if (layer.parentId) {
+                    const parentPoints = layerPointsMap.get(String(layer.parentId));
+                    if (parentPoints && parentPoints.length > 0) {
+                        originCenters = parentPoints;
+                    }
+                }
+
+                const layerVertices = [];
+                let strokeColor = layer.strokeColor;
+                if (layer.colorCycle) {
+                    const cycleHue = (state.time * layer.colorCycleSpeed) % 360;
+                    strokeColor = `hsla(${cycleHue}, 100%, 65%, 1)`;
+                }
+
+                rCtx.strokeStyle = strokeColor;
+                rCtx.lineWidth = layer.strokeWidth * targetDPR;
+                
+                if (state.glowEnabled) {
+                    rCtx.shadowBlur = 12 * targetDPR;
+                    rCtx.shadowColor = strokeColor;
+                } else {
+                    rCtx.shadowBlur = 0;
+                }
+
+                let calculatedRadius = layer.radius;
+                if (layer.breathingSpeed > 0) {
+                    const breatheMultiplier = 1 + Math.sin(layer.breathingPhase) * layer.breathingAmount;
+                    calculatedRadius = layer.radius * breatheMultiplier;
+                }
+
+                for (let rIdx = 0; rIdx < layer.rings; rIdx++) {
+                    const scaleFactor = 1 - (rIdx * (1 / (layer.rings + 1)));
+                    const ringRadius = calculatedRadius * scaleFactor;
+
+                    originCenters.forEach(center => {
+                        const vertices = [];
+                        for (let s = 0; s < layer.symmetry; s++) {
+                            const angle = (s * Math.PI * 2) / layer.symmetry + layer.phase;
+                            const vx = center.x + ringRadius * Math.cos(angle);
+                            const vy = center.y + ringRadius * Math.sin(angle);
+                            vertices.push({ x: vx, y: vy });
+                            layerVertices.push({ x: vx, y: vy });
+                        }
+
+                        if (layer.drawAtVertices) {
+                            vertices.forEach(v => {
+                                const subRadius = ringRadius * 0.4;
+                                const subVertices = [];
+                                for (let s = 0; s < layer.symmetry; s++) {
+                                    const angle = (s * Math.PI * 2) / layer.symmetry + layer.phase;
+                                    const vx = v.x + subRadius * Math.cos(angle);
+                                    const vy = v.y + subRadius * Math.sin(angle);
+                                    subVertices.push({ x: vx, y: vy });
+                                }
+
+                                if (layer.fillOpacity > 0) {
+                                    rCtx.fillStyle = changeColorOpacity(strokeColor, layer.fillOpacity);
+                                }
+
+                                switch(layer.shapeType) {
+                                    case 'circle':
+                                        rCtx.beginPath();
+                                        rCtx.arc(v.x, v.y, subRadius, 0, Math.PI * 2);
+                                        rCtx.stroke();
+                                        if (layer.fillOpacity > 0) rCtx.fill();
+                                        break;
+                                    case 'polygon':
+                                        rCtx.beginPath();
+                                        subVertices.forEach((sv, idx) => {
+                                            if (idx === 0) rCtx.moveTo(sv.x, sv.y);
+                                            else rCtx.lineTo(sv.x, sv.y);
+                                        });
+                                        rCtx.closePath();
+                                        rCtx.stroke();
+                                        if (layer.fillOpacity > 0) rCtx.fill();
+                                        break;
+                                    case 'star':
+                                        rCtx.beginPath();
+                                        const pts = layer.symmetry;
+                                        for (let s = 0; s < pts * 2; s++) {
+                                            const angle = (s * Math.PI) / pts + layer.phase;
+                                            const r = s % 2 === 0 ? subRadius : subRadius * layer.innerRadiusRatio;
+                                            const vx = v.x + r * Math.cos(angle);
+                                            const vy = v.y + r * Math.sin(angle);
+                                            if (s === 0) rCtx.moveTo(vx, vy);
+                                            else rCtx.lineTo(vx, vy);
+                                        }
+                                        rCtx.closePath();
+                                        rCtx.stroke();
+                                        if (layer.fillOpacity > 0) rCtx.fill();
+                                        break;
+                                    case 'connected_lines':
+                                        for (let i = 0; i < subVertices.length; i++) {
+                                            const targetIdx = (i + layer.lineStep) % subVertices.length;
+                                            rCtx.beginPath();
+                                            rCtx.moveTo(subVertices[i].x, subVertices[i].y);
+                                            rCtx.lineTo(subVertices[targetIdx].x, subVertices[targetIdx].y);
+                                            rCtx.stroke();
+                                        }
+                                        break;
+                                    case 'flower_of_life':
+                                        subVertices.forEach(sv => {
+                                            rCtx.beginPath();
+                                            rCtx.arc(sv.x, sv.y, subRadius, 0, Math.PI * 2);
+                                            rCtx.stroke();
+                                        });
+                                        break;
+                                }
+                            });
+                        } else {
+                            if (layer.fillOpacity > 0) {
+                                rCtx.fillStyle = changeColorOpacity(strokeColor, layer.fillOpacity);
+                            }
+
+                            switch(layer.shapeType) {
+                                case 'circle':
+                                    rCtx.beginPath();
+                                    rCtx.arc(center.x, center.y, ringRadius, 0, Math.PI * 2);
+                                    rCtx.stroke();
+                                    if (layer.fillOpacity > 0) rCtx.fill();
+                                    break;
+                                case 'polygon':
+                                    rCtx.beginPath();
+                                    vertices.forEach((v, index) => {
+                                        if (index === 0) rCtx.moveTo(v.x, v.y);
+                                        else rCtx.lineTo(v.x, v.y);
+                                    });
+                                    rCtx.closePath();
+                                    rCtx.stroke();
+                                    if (layer.fillOpacity > 0) rCtx.fill();
+                                    break;
+                                case 'star':
+                                    rCtx.beginPath();
+                                    const pts = layer.symmetry;
+                                    for (let s = 0; s < pts * 2; s++) {
+                                        const angle = (s * Math.PI) / pts + layer.phase;
+                                        const r = s % 2 === 0 ? ringRadius : ringRadius * layer.innerRadiusRatio;
+                                        const vx = center.x + r * Math.cos(angle);
+                                        const vy = center.y + r * Math.sin(angle);
+                                        if (s === 0) rCtx.moveTo(vx, vy);
+                                        else rCtx.lineTo(vx, vy);
+                                    }
+                                    rCtx.closePath();
+                                    rCtx.stroke();
+                                    if (layer.fillOpacity > 0) rCtx.fill();
+                                    break;
+                                case 'connected_lines':
+                                    for (let i = 0; i < vertices.length; i++) {
+                                        const targetIdx = (i + layer.lineStep) % vertices.length;
+                                        rCtx.beginPath();
+                                        rCtx.moveTo(vertices[i].x, vertices[i].y);
+                                        rCtx.lineTo(vertices[targetIdx].x, vertices[targetIdx].y);
+                                        rCtx.stroke();
+                                    }
+                                    break;
+                                case 'flower_of_life':
+                                    vertices.forEach(v => {
+                                        rCtx.beginPath();
+                                        rCtx.arc(v.x, v.y, ringRadius, 0, Math.PI * 2);
+                                        rCtx.stroke();
+                                    });
+                                    break;
+                            }
+                        }
+                    });
+                }
+                layerPointsMap.set(String(layer.id), layerVertices.slice(0, 1000));
+            });
+
+            rCtx.restore();
+
+            try {
+                const url = renderCanvas.toDataURL('image/png');
+                
+                // Show in the custom modal for touch-friendly saving
+                const modal = document.getElementById('exportModal');
+                const img = document.getElementById('exportedImage');
+                const dlBtn = document.getElementById('modalDownloadBtn');
+                
+                img.src = url;
+                dlBtn.href = url;
+                dlBtn.download = `sacred_mandala_${Date.now()}.png`;
+                
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                showToast("PNG Render Ready!");
+            } catch(e) {
+                showToast("Error generating image", "error");
+                console.error(e);
+            }
+        }
+    </script>
+
+    <!-- MathJax for TeX rendering in instruction sheet -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</body>
+</html>
